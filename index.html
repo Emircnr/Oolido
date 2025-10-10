@@ -3,353 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oolido - Ultimate Rating Platform</title>
+    <title>Oolido - Rate Everything</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body { 
-            font-family: 'Inter', sans-serif; 
-            overflow-x: hidden; 
-            transition: all 0.3s ease;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        body.dark-mode { 
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-            color: #f3f4f6; 
-        }
-        
-        body.light-mode { 
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            color: #1f2937; 
-        }
-        
-        .logo-text { font-family: 'Space Grotesk', sans-serif; }
-        
-        .gradient-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .gradient-secondary { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        .gradient-success { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        .gradient-warning { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-        .gradient-text { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
-            background-clip: text; 
-        }
-        
-        .glass { 
-            background: rgba(255, 255, 255, 0.95); 
-            backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.6); 
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-        }
-        
-        body.dark-mode .glass { 
-            background: rgba(30, 30, 50, 0.85); 
-            border: 1px solid rgba(255, 255, 255, 0.1); 
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-        }
-        
-        .card { 
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            transform-style: preserve-3d;
-            position: relative;
-        }
-        
-        .card::before {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
-            border-radius: inherit;
-            opacity: 0;
-            transition: opacity 0.4s;
-            z-index: -1;
-        }
-        
-        .card:hover { 
-            transform: translateY(-12px) scale(1.02);
-            box-shadow: 0 25px 50px rgba(102, 126, 234, 0.4);
-        }
-        
-        .card:hover::before { opacity: 0.3; }
-        
-        .btn { 
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            position: relative; 
-            overflow: hidden;
-            font-weight: 600;
-        }
-        
-        .btn::before { 
-            content: ''; 
-            position: absolute; 
-            top: 50%; 
-            left: 50%; 
-            width: 0; 
-            height: 0; 
-            border-radius: 50%;
-            background: rgba(255,255,255,0.3); 
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-        
-        .btn:hover::before { 
-            width: 300px; 
-            height: 300px; 
-        }
-        
-        .btn:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        }
-        
-        .btn:active { transform: translateY(0); }
-        
-        .star { 
-            cursor: pointer; 
-            transition: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
-        }
-        
-        .star:hover { 
-            transform: scale(1.4) rotate(15deg); 
-            filter: drop-shadow(0 0 8px #fbbf24);
-        }
-        
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(30px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-        
-        .fade-in { animation: fadeIn 0.6s ease-out; }
-        
-        @keyframes slideInLeft { 
-            from { opacity: 0; transform: translateX(-50px); } 
-            to { opacity: 1; transform: translateX(0); } 
-        }
-        
-        .slide-in-left { animation: slideInLeft 0.5s ease-out; }
-        
-        @keyframes shimmer {
-            0% { background-position: -1000px 0; }
-            100% { background-position: 1000px 0; }
-        }
-        
-        .shimmer {
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            background-size: 1000px 100%;
-            animation: shimmer 2s infinite;
-        }
-        
-        .dropdown { position: relative; display: inline-block; }
-        .dropdown-content { 
-            display: none; 
-            position: absolute; 
-            right: 0; 
-            top: 100%; 
-            margin-top: 0.5rem; 
-            min-width: 140px; 
-            z-index: 100;
-            animation: fadeIn 0.3s ease-out;
-        }
-        .dropdown:hover .dropdown-content { display: block; }
-        
-        .badge-premium { 
-            padding: 0.375rem 1rem; 
-            font-size: 0.75rem; 
-            border-radius: 9999px; 
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-        
-        .modal { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0, 0, 0, 0.8); 
-            backdrop-filter: blur(12px); 
-            z-index: 1000; 
-            align-items: center; 
-            justify-content: center;
-            animation: fadeIn 0.3s ease-out;
-        }
-        
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; transition: all 0.3s; }
+        body.light { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); color: #1f2937; }
+        body.dark { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; }
+        .glass { background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        body.dark .glass { background: rgba(30,41,59,0.9); border: 1px solid rgba(255,255,255,0.1); }
+        .grad-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .grad-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(102,126,234,0.3); }
+        .btn { transition: all 0.3s; position: relative; overflow: hidden; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center; }
         .modal.show { display: flex; }
-        
-        .modal-content {
-            animation: slideInLeft 0.4s ease-out;
-        }
-        
-        .vs-meter { 
-            height: 28px; 
-            background: #e5e7eb; 
-            border-radius: 14px; 
-            overflow: hidden; 
-            position: relative;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        body.dark-mode .vs-meter { background: #374151; }
-        
-        .vs-meter-fill { 
-            height: 100%; 
-            transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        
-        .rating-badge { 
-            width: 90px; 
-            height: 90px; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 1.75rem; 
-            font-weight: 900; 
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.25);
-            border: 4px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; right: 0; top: 100%; margin-top: 0.5rem; min-width: 140px; z-index: 100; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .tab { padding: 0.75rem 1.5rem; border-radius: 0.75rem; cursor: pointer; transition: all 0.3s; font-weight: 600; }
+        .tab:hover { background: rgba(102,126,234,0.1); }
+        .tab.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { 
-            background: linear-gradient(135deg, #667eea, #764ba2); 
-            border-radius: 5px; 
-        }
-        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(135deg, #764ba2, #f093fb); }
-        
-        .tab { 
-            padding: 0.75rem 1.5rem; 
-            border-radius: 1rem; 
-            cursor: pointer; 
-            transition: all 0.3s; 
-            font-weight: 600;
-            position: relative;
-        }
-        
-        .tab::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 0;
-            height: 3px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            transform: translateX(-50%);
-            transition: width 0.3s;
-            border-radius: 2px;
-        }
-        
-        .tab:hover { background: rgba(102, 126, 234, 0.1); }
-        .tab:hover::after { width: 80%; }
-        .tab.active { 
-            background: linear-gradient(135deg, #667eea, #764ba2); 
-            color: white; 
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        .tab.active::after { width: 0; }
-        
-        .search-glow {
-            box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
-            transition: box-shadow 0.3s;
-        }
-        
-        .search-glow:focus {
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
-        }
-        
-        .floating-action {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 100;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.05); }
-        }
-        
-        .pulse { animation: pulse 2s ease-in-out infinite; }
-        
-        .image-hover {
-            transition: transform 0.6s ease;
-        }
-        
-        .card:hover .image-hover {
-            transform: scale(1.1);
-        }
-        
-        .tag-cloud span {
-            display: inline-block;
-            margin: 0.25rem;
-            transition: all 0.3s;
-        }
-        
-        .tag-cloud span:hover {
-            transform: translateY(-3px) scale(1.1);
-        }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 4px; }
     </style>
 </head>
-<body class="light-mode">
-    <!-- Login Screen -->
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-        <div class="absolute inset-0" style="background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 1px, transparent 1px), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 60px 60px;"></div>
-        
-        <div class="glass rounded-3xl p-12 max-w-lg w-full shadow-2xl relative z-10 slide-in-left">
+<body class="light">
+    <!-- Login -->
+    <div id="loginScreen" class="min-h-screen grad-primary flex items-center justify-center p-4">
+        <div class="glass rounded-3xl p-12 max-w-lg w-full shadow-2xl">
             <div class="text-center mb-12">
-                <h1 class="logo-text text-8xl font-black text-white mb-4 tracking-tight drop-shadow-lg">Oolido</h1>
-                <p class="text-white text-2xl font-light" id="loginSubtitle">Rate Everything, Everywhere</p>
-                <div class="mt-4 flex items-center justify-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-white opacity-50"></div>
-                    <div class="w-2 h-2 rounded-full bg-white"></div>
-                    <div class="w-2 h-2 rounded-full bg-white opacity-50"></div>
-                </div>
+                <h1 class="text-8xl font-black text-white mb-4">Oolido</h1>
+                <p class="text-white text-2xl" id="loginSubtitle">Rate Everything, Everywhere</p>
             </div>
-            
             <div class="space-y-4">
-                <button onclick="showAuthModal('login')" class="btn w-full bg-white text-purple-600 py-4 rounded-2xl font-bold shadow-xl hover:shadow-2xl" id="loginBtn">Login</button>
-                <button onclick="showAuthModal('signup')" class="btn w-full bg-white/20 text-white py-4 rounded-2xl font-bold border-2 border-white/40 backdrop-blur-sm" id="signupBtn">Sign Up</button>
-                <button onclick="handleGoogleLogin()" class="btn w-full bg-white text-gray-800 py-4 rounded-2xl font-bold shadow-xl hover:shadow-2xl flex items-center justify-center gap-3">
+                <button onclick="showAuthModal('login')" class="btn w-full bg-white text-purple-600 py-4 rounded-2xl font-bold" id="loginBtn">Login</button>
+                <button onclick="showAuthModal('signup')" class="btn w-full bg-white/20 text-white py-4 rounded-2xl font-bold border-2 border-white/40" id="signupBtn">Sign Up</button>
+                <button onclick="handleGoogleLogin()" class="btn w-full bg-white text-gray-800 py-4 rounded-2xl font-bold flex items-center justify-center gap-3">
                     <svg class="w-6 h-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                     <span id="googleBtn">Continue with Google</span>
                 </button>
-            </div>
-            
-            <div class="mt-8 text-center text-white text-sm opacity-75">
-                <p>Join 10,000+ users rating the world</p>
             </div>
         </div>
     </div>
 
     <!-- Auth Modal -->
     <div id="authModal" class="modal">
-        <div class="modal-content glass rounded-3xl p-10 max-w-md w-full mx-4 shadow-2xl">
+        <div class="glass rounded-3xl p-10 max-w-md w-full mx-4 shadow-2xl">
             <div class="flex justify-between items-center mb-8">
-                <h3 id="authTitle" class="text-3xl font-black gradient-text">Login</h3>
-                <button onclick="closeAuthModal()" class="text-4xl hover:text-purple-600 transition-colors">&times;</button>
+                <h3 id="authTitle" class="text-3xl font-black grad-text">Login</h3>
+                <button onclick="closeAuthModal()" class="text-4xl hover:text-purple-600">&times;</button>
             </div>
-            
             <div id="signupFields" class="hidden mb-4">
-                <input type="text" id="displayName" placeholder="Display Name" class="w-full px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none transition-all search-glow">
+                <input type="text" id="displayName" placeholder="Display Name" class="w-full px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none">
             </div>
-            
-            <input type="email" id="email" placeholder="Email or Username" class="w-full px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none mb-4 transition-all search-glow">
-            <input type="password" id="password" placeholder="Password" class="w-full px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none mb-6 transition-all search-glow">
-            
-            <button onclick="handleAuth()" class="btn w-full gradient-primary text-white py-4 rounded-xl font-bold shadow-xl mb-4">
-                <span id="authButton">Login</span>
-            </button>
-            
+            <input type="email" id="email" placeholder="Email or Username" class="w-full px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none mb-4">
+            <input type="password" id="password" placeholder="Password" class="w-full px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none mb-6">
+            <button onclick="handleAuth()" class="btn w-full grad-primary text-white py-4 rounded-xl font-bold mb-4"><span id="authButton">Login</span></button>
             <div class="text-center">
-                <button onclick="toggleAuthMode()" class="text-purple-600 hover:text-purple-700 font-semibold transition-colors">
-                    <span id="authToggle">Don't have an account? Sign up</span>
-                </button>
+                <button onclick="toggleAuthMode()" class="text-purple-600 hover:text-purple-700 font-semibold"><span id="authToggle">Don't have an account? Sign up</span></button>
             </div>
         </div>
     </div>
@@ -357,264 +75,128 @@
     <!-- Main App -->
     <div id="mainApp" class="hidden">
         <!-- Header -->
-        <header class="glass sticky top-0 z-50 border-b border-white/20">
+        <header class="glass sticky top-0 z-50">
             <div class="container mx-auto px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <h1 class="logo-text text-5xl font-black gradient-text cursor-pointer hover:scale-105 transition-transform" onclick="showPage('home')">Oolido</h1>
-                    
-                    <div class="flex items-center gap-4">
-                        <!-- Language Dropdown -->
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <h1 class="text-4xl font-black grad-text cursor-pointer" onclick="showPage('home')">Oolido</h1>
+                    <div class="flex items-center gap-3 flex-wrap">
                         <div class="dropdown">
-                            <button class="btn glass px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 hover:shadow-lg">
-                                <span id="currentLang" class="text-lg">🇬🇧 EN</span>
+                            <button class="btn glass px-4 py-2 rounded-xl font-semibold flex items-center gap-2">
+                                <span id="currentLang">🇬🇧 EN</span>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                             <div class="dropdown-content glass rounded-xl p-2 shadow-2xl">
-                                <button onclick="changeLanguage('en')" class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-purple-100 font-semibold transition-colors">🇬🇧 EN</button>
-                                <button onclick="changeLanguage('tr')" class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-purple-100 font-semibold transition-colors">🇹🇷 TR</button>
-                                <button onclick="changeLanguage('de')" class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-purple-100 font-semibold transition-colors">🇩🇪 DE</button>
-                                <button onclick="changeLanguage('fr')" class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-purple-100 font-semibold transition-colors">🇫🇷 FR</button>
-                                <button onclick="changeLanguage('es')" class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-purple-100 font-semibold transition-colors">🇪🇸 ES</button>
+                                <button onclick="changeLanguage('en')" class="w-full text-left px-4 py-2 rounded-lg hover:bg-purple-100 font-semibold">🇬🇧 EN</button>
+                                <button onclick="changeLanguage('tr')" class="w-full text-left px-4 py-2 rounded-lg hover:bg-purple-100 font-semibold">🇹🇷 TR</button>
+                                <button onclick="changeLanguage('de')" class="w-full text-left px-4 py-2 rounded-lg hover:bg-purple-100 font-semibold">🇩🇪 DE</button>
+                                <button onclick="changeLanguage('fr')" class="w-full text-left px-4 py-2 rounded-lg hover:bg-purple-100 font-semibold">🇫🇷 FR</button>
+                                <button onclick="changeLanguage('es')" class="w-full text-left px-4 py-2 rounded-lg hover:bg-purple-100 font-semibold">🇪🇸 ES</button>
                             </div>
                         </div>
-                        
-                        <!-- Dark Mode Toggle -->
-                        <button onclick="toggleDarkMode()" class="btn glass p-3 rounded-xl hover:shadow-lg">
+                        <button onclick="toggleDarkMode()" class="btn glass p-3 rounded-xl">
                             <svg id="darkIcon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
                             <svg id="lightIcon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
                         </button>
-                        
-                        <button onclick="toggleNotifications()" class="btn glass p-3 rounded-xl relative hover:shadow-lg">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                            <span id="notificationDot" class="hidden absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full pulse"></span>
-                        </button>
-                        
                         <nav class="flex gap-2">
                             <button onclick="showPage('home')" class="tab" id="homeNav">Home</button>
                             <button onclick="showPage('versus')" class="tab" id="versusNav">VS</button>
-                            <button onclick="showPage('trends')" class="tab" id="trendsNav">📈</button>
                             <button onclick="showPage('favorites')" class="tab" id="favoritesNav">⭐</button>
                             <button onclick="showPage('profile')" class="tab" id="profileNav">Profile</button>
-                            <button id="adminBtn" class="hidden tab gradient-warning text-white" onclick="showPage('admin')">Admin</button>
+                            <button id="adminBtn" class="hidden tab" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white;" onclick="showPage('admin')">Admin</button>
                         </nav>
-                        
-                        <button onclick="handleLogout()" class="btn text-red-500 hover:bg-red-50 px-4 py-2.5 rounded-xl font-semibold transition-all" id="logoutNav">Logout</button>
+                        <button onclick="handleLogout()" class="btn text-red-500 hover:bg-red-50 px-4 py-2 rounded-xl font-semibold" id="logoutNav">Logout</button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Notification Panel -->
-        <div id="notificationPanel" class="hidden fixed top-20 right-4 w-96 glass rounded-2xl shadow-2xl p-6 z-40 max-h-96 overflow-y-auto">
-            <h3 class="text-xl font-bold gradient-text mb-4" id="notificationsTitle">Notifications</h3>
-            <div id="notificationsList"></div>
-        </div>
-
-        <!-- Main Content -->
+        <!-- Main -->
         <main class="container mx-auto px-6 py-8">
-            <!-- Home Page -->
+            <!-- Home -->
             <div id="homePage" class="fade-in">
-                <!-- Search Section -->
                 <div class="glass rounded-3xl p-8 mb-8 shadow-xl">
-                    <div class="flex gap-4 mb-6">
-                        <div class="relative flex-1">
+                    <div class="flex gap-4 mb-4 flex-wrap">
+                        <div class="relative flex-1 min-w-[200px]">
                             <svg class="absolute left-5 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            <input type="text" id="searchInput" placeholder="Search by name, description, or tags..." class="w-full pl-14 pr-6 py-4 rounded-2xl border-2 border-gray-200 focus:border-purple-500 outline-none transition-all search-glow text-lg" oninput="filterItems()">
+                            <input type="text" id="searchInput" placeholder="Search..." class="w-full pl-14 pr-6 py-4 rounded-2xl border-2 focus:border-purple-500 outline-none text-lg" oninput="filterItems()">
                         </div>
-                        <button onclick="toggleAdvancedSearch()" class="btn glass px-8 py-4 rounded-2xl font-semibold hover:shadow-lg">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                        </button>
-                        <button onclick="randomItem()" class="btn gradient-primary text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-lg hover:shadow-xl">
+                        <button onclick="randomItem()" class="btn grad-primary text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-3">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                             <span id="randomBtn">Random</span>
                         </button>
                     </div>
-                    
-                    <div id="advancedSearch" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;">
-                        <div class="grid grid-cols-3 gap-6 pt-6 border-t border-gray-200">
-                            <div>
-                                <label class="block text-sm font-bold mb-3" id="filterCategoryLabel">Category</label>
-                                <select id="filterCategory" onchange="filterItems()" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow">
-                                    <option value="">All</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold mb-3" id="filterRatingLabel">Min Rating</label>
-                                <select id="filterRating" onchange="filterItems()" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow">
-                                    <option value="0">All Ratings</option>
-                                    <option value="1">1+ ⭐</option>
-                                    <option value="2">2+ ⭐</option>
-                                    <option value="3">3+ ⭐</option>
-                                    <option value="4">4+ ⭐</option>
-                                    <option value="5">5 ⭐</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold mb-3" id="sortByLabel">Sort By</label>
-                                <select id="sortBy" onchange="filterItems()" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow">
-                                    <option value="trending">🔥 Trending</option>
-                                    <option value="rating">⭐ Highest Rated</option>
-                                    <option value="reviews">💬 Most Reviewed</option>
-                                    <option value="views">👁️ Most Viewed</option>
-                                    <option value="newest">🆕 Newest</option>
-                                </select>
-                            </div>
-                        </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <select id="filterCategory" onchange="filterItems()" class="px-4 py-3 rounded-xl border-2 focus:border-purple-500 outline-none"></select>
+                        <select id="filterRating" onchange="filterItems()" class="px-4 py-3 rounded-xl border-2 focus:border-purple-500 outline-none">
+                            <option value="0">All Ratings</option>
+                            <option value="1">1+ ⭐</option>
+                            <option value="2">2+ ⭐</option>
+                            <option value="3">3+ ⭐</option>
+                            <option value="4">4+ ⭐</option>
+                        </select>
+                        <select id="sortBy" onchange="filterItems()" class="px-4 py-3 rounded-xl border-2 focus:border-purple-500 outline-none">
+                            <option value="trending">🔥 Trending</option>
+                            <option value="rating">⭐ Top Rated</option>
+                            <option value="reviews">💬 Most Reviews</option>
+                            <option value="newest">🆕 Newest</option>
+                        </select>
                     </div>
                 </div>
-
-                <!-- Items Grid -->
                 <div id="itemsGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6"></div>
             </div>
 
-            <!-- Detail Page -->
+            <!-- Detail -->
             <div id="detailPage" class="hidden fade-in">
-                <button onclick="backToHome()" class="btn glass px-6 py-3 rounded-2xl font-semibold mb-6 flex items-center gap-2 hover:shadow-lg" id="backBtn">
+                <button onclick="backToHome()" class="btn glass px-6 py-3 rounded-2xl font-semibold mb-6 flex items-center gap-2" id="backBtn">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     Back
                 </button>
                 <div id="itemDetail"></div>
             </div>
 
-            <!-- Versus Page -->
+            <!-- Versus -->
             <div id="versusPage" class="hidden fade-in">
-                <div class="text-center mb-10">
-                    <h2 class="text-5xl font-black gradient-text mb-3">⚔️ <span id="versusTitle">Versus Battle</span></h2>
-                    <p class="text-lg opacity-75">Compare two items side by side</p>
-                </div>
-                
+                <h2 class="text-5xl font-black grad-text mb-8 text-center">⚔️ Versus Battle</h2>
                 <div class="grid grid-cols-2 gap-8 mb-8">
-                    <div class="glass rounded-2xl p-8 shadow-xl">
-                        <label class="block text-lg font-bold mb-4 gradient-text">Select Fighter 1</label>
-                        <select id="versus1" onchange="updateVersus()" class="w-full px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow text-lg"></select>
+                    <div class="glass rounded-2xl p-8">
+                        <label class="block text-lg font-bold mb-4">Fighter 1</label>
+                        <select id="versus1" onchange="updateVersus()" class="w-full px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none"></select>
                     </div>
-                    <div class="glass rounded-2xl p-8 shadow-xl">
-                        <label class="block text-lg font-bold mb-4 gradient-text">Select Fighter 2</label>
-                        <select id="versus2" onchange="updateVersus()" class="w-full px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow text-lg"></select>
+                    <div class="glass rounded-2xl p-8">
+                        <label class="block text-lg font-bold mb-4">Fighter 2</label>
+                        <select id="versus2" onchange="updateVersus()" class="w-full px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none"></select>
                     </div>
                 </div>
-                
                 <div id="versusComparison"></div>
             </div>
 
-            <!-- Trends Page -->
-            <div id="trendsPage" class="hidden fade-in">
-                <div class="text-center mb-10">
-                    <h2 class="text-5xl font-black gradient-text mb-3">📈 <span id="trendsPageTitle">Trend Analysis</span></h2>
-                    <p class="text-lg opacity-75">See what's hot and what's not</p>
-                </div>
-                <div id="trendsContent"></div>
-            </div>
-
-            <!-- Favorites Page -->
+            <!-- Favorites -->
             <div id="favoritesPage" class="hidden fade-in">
-                <div class="text-center mb-10">
-                    <h2 class="text-5xl font-black gradient-text mb-3">⭐ <span id="favoritesPageTitle">My Favorites</span></h2>
-                    <p class="text-lg opacity-75">Your personal collection</p>
-                </div>
+                <h2 class="text-5xl font-black grad-text mb-8 text-center">⭐ My Favorites</h2>
                 <div id="favoritesList" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6"></div>
             </div>
 
-            <!-- Profile Page -->
+            <!-- Profile -->
             <div id="profilePage" class="hidden fade-in">
                 <div id="profileContent"></div>
             </div>
 
-            <!-- Admin Page -->
+            <!-- Admin -->
             <div id="adminPage" class="hidden fade-in">
                 <div id="adminContent"></div>
             </div>
         </main>
-
-        <!-- Floating Action Button -->
-        <button onclick="randomItem()" class="floating-action btn gradient-secondary text-white w-16 h-16 rounded-full shadow-2xl hover:shadow-3xl flex items-center justify-center">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-        </button>
     </div>
 
     <script>
-        let currentUser = null, isAdmin = false, authMode = 'login', selectedItem = null, currentPage = 'home', newRating = 0, currentLang = 'en', userVotes = {}, favorites = [], notifications = [], darkMode = false;
+        let currentUser = null, isAdmin = false, authMode = 'login', selectedItem = null, currentPage = 'home', newRating = 0, currentLang = 'en', userVotes = {}, favorites = [], darkMode = false;
 
         const translations = {
-            en: {
-                loginSubtitle: 'Rate Everything, Everywhere', login: 'Login', signup: 'Sign Up', google: 'Continue with Google',
-                home: 'Home', profile: 'Profile', logout: 'Logout', versus: 'VS', trends: 'Trends', favorites: 'Favorites',
-                search: 'Search by name, description, or tags...', random: 'Random', back: 'Back',
-                reviews: 'reviews', views: 'views', avgRating: 'Avg Rating', totalReviews: 'Total Reviews',
-                submitReview: 'Submit Review', yourRating: 'Your Rating', yourComment: 'Your Comment (optional)',
-                submit: 'Submit', alreadyVoted: 'You already voted!', noReviews: 'No reviews yet',
-                similarItems: 'Similar Items', youVoted: 'Voted', category: 'Category', tags: 'Tags',
-                filterCategory: 'Category', minRating: 'Min Rating', sortBy: 'Sort By', trending: 'Trending',
-                versusTitle: 'Versus Battle', trendsPageTitle: 'Trend Analysis', favoritesPageTitle: 'My Favorites',
-                noFavorites: 'No favorites yet', adminPanel: 'Admin Panel', notifications: 'Notifications',
-                noNotifications: 'No notifications', authToggleSignup: 'Don\'t have an account? Sign up',
-                authToggleLogin: 'Already have an account? Login', addedToFavorites: 'Added to favorites!',
-                removedFromFavorites: 'Removed from favorites', reviewSubmitted: 'Review submitted!', all: 'All',
-                overallScore: 'Overall Score', winner: 'Winner', statistics: 'Statistics', comparison: 'Detailed Comparison',
-                risingThisMonth: 'Rising This Month', fallingThisMonth: 'Falling This Month', noData: 'No data available'
-            },
-            tr: {
-                loginSubtitle: 'Her Şeyi Değerlendir', login: 'Giriş', signup: 'Kayıt Ol', google: 'Google ile Giriş',
-                home: 'Ana Sayfa', profile: 'Profil', logout: 'Çıkış', versus: 'Karşılaştır', trends: 'Trendler', favorites: 'Favoriler',
-                search: 'İsim, açıklama veya etiketlere göre ara...', random: 'Rastgele', back: 'Geri',
-                reviews: 'değerlendirme', views: 'görüntüleme', avgRating: 'Ort. Puan', totalReviews: 'Toplam',
-                submitReview: 'Değerlendirme Yap', yourRating: 'Puanınız', yourComment: 'Yorumunuz (opsiyonel)',
-                submit: 'Gönder', alreadyVoted: 'Zaten oyladınız!', noReviews: 'Henüz yorum yok',
-                similarItems: 'Benzer İçerikler', youVoted: 'Oylandı', category: 'Kategori', tags: 'Etiketler',
-                filterCategory: 'Kategori', minRating: 'Min Puan', sortBy: 'Sırala', trending: 'Trend',
-                versusTitle: 'Karşılaştırma', trendsPageTitle: 'Trend Analizi', favoritesPageTitle: 'Favorilerim',
-                noFavorites: 'Henüz favori yok', adminPanel: 'Admin Paneli', notifications: 'Bildirimler',
-                noNotifications: 'Bildirim yok', authToggleSignup: 'Hesabınız yok mu? Kayıt olun',
-                authToggleLogin: 'Hesabınız var mı? Giriş yapın', addedToFavorites: 'Favorilere eklendi!',
-                removedFromFavorites: 'Favorilerden çıkarıldı', reviewSubmitted: 'Değerlendirme gönderildi!', all: 'Tümü',
-                overallScore: 'Genel Skor', winner: 'Kazanan', statistics: 'İstatistikler', comparison: 'Detaylı Karşılaştırma',
-                risingThisMonth: 'Bu Ay Yükselenler', fallingThisMonth: 'Bu Ay Düşenler', noData: 'Veri yok'
-            },
-            de: {
-                loginSubtitle: 'Bewerte Alles', login: 'Anmelden', signup: 'Registrieren', google: 'Mit Google',
-                home: 'Start', profile: 'Profil', logout: 'Abmelden', versus: 'Vergleich', trends: 'Trends', favorites: 'Favoriten',
-                search: 'Suchen...', random: 'Zufall', back: 'Zurück', reviews: 'Bewertungen', views: 'Ansichten',
-                avgRating: 'Durchschn.', totalReviews: 'Gesamt', submitReview: 'Bewerten', yourRating: 'Bewertung',
-                yourComment: 'Kommentar', submit: 'Senden', alreadyVoted: 'Bereits bewertet!', noReviews: 'Keine',
-                similarItems: 'Ähnlich', youVoted: 'Bewertet', category: 'Kategorie', tags: 'Tags',
-                filterCategory: 'Kategorie', minRating: 'Min', sortBy: 'Sortieren', trending: 'Trend',
-                versusTitle: 'Vergleich', trendsPageTitle: 'Trends', favoritesPageTitle: 'Favoriten',
-                noFavorites: 'Keine', adminPanel: 'Admin', notifications: 'Benachrichtigungen',
-                noNotifications: 'Keine', authToggleSignup: 'Registrieren', authToggleLogin: 'Anmelden',
-                addedToFavorites: 'Favorit!', removedFromFavorites: 'Entfernt', reviewSubmitted: 'Gesendet!', all: 'Alle',
-                overallScore: 'Gesamt', winner: 'Gewinner', statistics: 'Statistik', comparison: 'Vergleich',
-                risingThisMonth: 'Steigend', fallingThisMonth: 'Fallend', noData: 'Keine Daten'
-            },
-            fr: {
-                loginSubtitle: 'Évaluez Tout', login: 'Connexion', signup: 'S\'inscrire', google: 'Google',
-                home: 'Accueil', profile: 'Profil', logout: 'Déconnexion', versus: 'Versus', trends: 'Tendances', favorites: 'Favoris',
-                search: 'Rechercher...', random: 'Aléatoire', back: 'Retour', reviews: 'avis', views: 'vues',
-                avgRating: 'Moy', totalReviews: 'Total', submitReview: 'Évaluer', yourRating: 'Note',
-                yourComment: 'Commentaire', submit: 'Envoyer', alreadyVoted: 'Déjà voté!', noReviews: 'Pas d\'avis',
-                similarItems: 'Similaires', youVoted: 'Voté', category: 'Catégorie', tags: 'Tags',
-                filterCategory: 'Catégorie', minRating: 'Min', sortBy: 'Trier', trending: 'Tendance',
-                versusTitle: 'Versus', trendsPageTitle: 'Tendances', favoritesPageTitle: 'Favoris',
-                noFavorites: 'Pas de favoris', adminPanel: 'Admin', notifications: 'Notifications',
-                noNotifications: 'Aucune', authToggleSignup: 'S\'inscrire', authToggleLogin: 'Connexion',
-                addedToFavorites: 'Favori!', removedFromFavorites: 'Retiré', reviewSubmitted: 'Envoyé!', all: 'Tous',
-                overallScore: 'Score', winner: 'Gagnant', statistics: 'Stats', comparison: 'Comparaison',
-                risingThisMonth: 'En hausse', fallingThisMonth: 'En baisse', noData: 'Pas de données'
-            },
-            es: {
-                loginSubtitle: 'Califica Todo', login: 'Iniciar', signup: 'Registro', google: 'Google',
-                home: 'Inicio', profile: 'Perfil', logout: 'Salir', versus: 'Versus', trends: 'Tendencias', favorites: 'Favoritos',
-                search: 'Buscar...', random: 'Aleatorio', back: 'Atrás', reviews: 'reseñas', views: 'vistas',
-                avgRating: 'Promedio', totalReviews: 'Total', submitReview: 'Evaluar', yourRating: 'Calificación',
-                yourComment: 'Comentario', submit: 'Enviar', alreadyVoted: '¡Ya votaste!', noReviews: 'Sin reseñas',
-                similarItems: 'Similares', youVoted: 'Votado', category: 'Categoría', tags: 'Etiquetas',
-                filterCategory: 'Categoría', minRating: 'Mín', sortBy: 'Ordenar', trending: 'Tendencia',
-                versusTitle: 'Versus', trendsPageTitle: 'Tendencias', favoritesPageTitle: 'Favoritos',
-                noFavorites: 'Sin favoritos', adminPanel: 'Admin', notifications: 'Notificaciones',
-                noNotifications: 'Sin notificaciones', authToggleSignup: 'Registrarse', authToggleLogin: 'Iniciar',
-                addedToFavorites: '¡Favorito!', removedFromFavorites: 'Quitado', reviewSubmitted: '¡Enviado!', all: 'Todos',
-                overallScore: 'Puntuación', winner: 'Ganador', statistics: 'Estadísticas', comparison: 'Comparación',
-                risingThisMonth: 'Subiendo', fallingThisMonth: 'Bajando', noData: 'Sin datos'
-            }
+            en: { loginSubtitle: 'Rate Everything, Everywhere', login: 'Login', signup: 'Sign Up', google: 'Continue with Google', home: 'Home', profile: 'Profile', logout: 'Logout', versus: 'VS', favorites: 'Favorites', random: 'Random', back: 'Back', reviews: 'reviews', views: 'views', submitReview: 'Submit Review', yourRating: 'Your Rating', yourComment: 'Your Comment', submit: 'Submit', alreadyVoted: 'Already voted!', noReviews: 'No reviews yet', youVoted: 'Voted', authToggleSignup: 'Don\'t have an account? Sign up', authToggleLogin: 'Already have an account? Login', addedToFavorites: 'Added to favorites!', removedFromFavorites: 'Removed', reviewSubmitted: 'Review submitted!', all: 'All', winner: 'Winner', overallScore: 'Overall Score', noFavorites: 'No favorites yet', totalReviews: 'Total Reviews', avgRating: 'Avg Rating' },
+            tr: { loginSubtitle: 'Her Şeyi Değerlendir', login: 'Giriş', signup: 'Kayıt Ol', google: 'Google ile Giriş', home: 'Ana Sayfa', profile: 'Profil', logout: 'Çıkış', versus: 'Karşılaştır', favorites: 'Favoriler', random: 'Rastgele', back: 'Geri', reviews: 'değerlendirme', views: 'görüntüleme', submitReview: 'Değerlendir', yourRating: 'Puanınız', yourComment: 'Yorumunuz', submit: 'Gönder', alreadyVoted: 'Zaten oyladınız!', noReviews: 'Henüz yorum yok', youVoted: 'Oylandı', authToggleSignup: 'Hesabınız yok mu? Kayıt olun', authToggleLogin: 'Hesabınız var mı? Giriş yapın', addedToFavorites: 'Favorilere eklendi!', removedFromFavorites: 'Çıkarıldı', reviewSubmitted: 'Gönderildi!', all: 'Tümü', winner: 'Kazanan', overallScore: 'Genel Skor', noFavorites: 'Henüz favori yok', totalReviews: 'Toplam', avgRating: 'Ortalama' },
+            de: { loginSubtitle: 'Bewerte Alles', login: 'Anmelden', signup: 'Registrieren', google: 'Mit Google', home: 'Start', profile: 'Profil', logout: 'Abmelden', versus: 'Vergleich', favorites: 'Favoriten', random: 'Zufall', back: 'Zurück', reviews: 'Bewertungen', views: 'Ansichten', submitReview: 'Bewerten', yourRating: 'Bewertung', yourComment: 'Kommentar', submit: 'Senden', alreadyVoted: 'Bereits bewertet!', noReviews: 'Keine', youVoted: 'Bewertet', authToggleSignup: 'Registrieren', authToggleLogin: 'Anmelden', addedToFavorites: 'Favorit!', removedFromFavorites: 'Entfernt', reviewSubmitted: 'Gesendet!', all: 'Alle', winner: 'Gewinner', overallScore: 'Gesamt', noFavorites: 'Keine', totalReviews: 'Gesamt', avgRating: 'Durchschn.' },
+            fr: { loginSubtitle: 'Évaluez Tout', login: 'Connexion', signup: 'S\'inscrire', google: 'Google', home: 'Accueil', profile: 'Profil', logout: 'Déconnexion', versus: 'Versus', favorites: 'Favoris', random: 'Aléatoire', back: 'Retour', reviews: 'avis', views: 'vues', submitReview: 'Évaluer', yourRating: 'Note', yourComment: 'Commentaire', submit: 'Envoyer', alreadyVoted: 'Déjà voté!', noReviews: 'Pas d\'avis', youVoted: 'Voté', authToggleSignup: 'S\'inscrire', authToggleLogin: 'Connexion', addedToFavorites: 'Favori!', removedFromFavorities: 'Retiré', reviewSubmitted: 'Envoyé!', all: 'Tous', winner: 'Gagnant', overallScore: 'Score', noFavorites: 'Pas de favoris', totalReviews: 'Total', avgRating: 'Moy' },
+            es: { loginSubtitle: 'Califica Todo', login: 'Iniciar', signup: 'Registro', google: 'Google', home: 'Inicio', profile: 'Perfil', logout: 'Salir', versus: 'Versus', favorites: 'Favoritos', random: 'Aleatorio', back: 'Atrás', reviews: 'reseñas', views: 'vistas', submitReview: 'Evaluar', yourRating: 'Calificación', yourComment: 'Comentario', submit: 'Enviar', alreadyVoted: '¡Ya votaste!', noReviews: 'Sin reseñas', youVoted: 'Votado', authToggleSignup: 'Registrarse', authToggleLogin: 'Iniciar', addedToFavorites: '¡Favorito!', removedFromFavorites: 'Quitado', reviewSubmitted: '¡Enviado!', all: 'Todos', winner: 'Ganador', overallScore: 'Puntuación', noFavorites: 'Sin favoritos', totalReviews: 'Total', avgRating: 'Promedio' }
         };
 
         function t(key) { return translations[currentLang][key] || translations['en'][key] || key; }
@@ -627,173 +209,99 @@
         }
 
         function updateUILanguage() {
-            const elements = {
-                loginSubtitle: 'loginSubtitle', loginBtn: 'login', signupBtn: 'signup', googleBtn: 'google',
-                homeNav: 'home', profileNav: 'profile', logoutNav: 'logout', versusNav: 'versus',
-                trendsNav: 'trends', favoritesNav: 'favorites', randomBtn: 'random', backBtn: 'back',
-                notificationsTitle: 'notifications', versusTitle: 'versusTitle', trendsPageTitle: 'trendsPageTitle',
-                favoritesPageTitle: 'favoritesPageTitle', filterCategoryLabel: 'filterCategory',
-                filterRatingLabel: 'minRating', sortByLabel: 'sortBy'
-            };
-            for(let id in elements) {
-                const el = document.getElementById(id);
-                if(el) el.textContent = t(elements[id]);
-            }
-            const search = document.getElementById('searchInput');
-            if(search) search.placeholder = t('search');
-            
-            if(currentPage === 'home') renderItems();
-            if(currentPage === 'versus') { renderVersusSelects(); updateVersus(); }
-            if(currentPage === 'favorites') renderFavorites();
+            const els = { loginSubtitle:'loginSubtitle', loginBtn:'login', signupBtn:'signup', googleBtn:'google', homeNav:'home', profileNav:'profile', logoutNav:'logout', versusNav:'versus', favoritesNav:'favorites', randomBtn:'random', backBtn:'back', authTitle:authMode==='login'?'login':'signup', authButton:authMode==='login'?'login':'signup', authToggle:authMode==='login'?'authToggleSignup':'authToggleLogin' };
+            for(let id in els) { const el = document.getElementById(id); if(el) el.textContent = t(els[id]); }
+            const search = document.getElementById('searchInput'); if(search) search.placeholder = t('search') || 'Search...';
+            if(currentPage==='home') renderItems(); if(currentPage==='versus') { renderVersusSelects(); updateVersus(); } if(currentPage==='favorites') renderFavorites();
             populateFilterCategory();
         }
 
-        const categories = ['Celebrities','Brands','Companies','Stocks/Funds','Sports Clubs','Politicians','YouTube Channels','Movies/TV Shows','Music','Technology'];
-        
+        const categories = ['Celebrities','Brands','Companies','Sports Clubs','YouTube Channels','Movies/TV Shows','Music','Technology'];
         const items = [
-            // Celebrities (10)
-            {id:'1',name:'Tarkan',category:'Celebrities',description:'Legendary Turkish pop music icon and international superstar',imageUrl:'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400',tags:['music','pop','artist','turkish','legend'],averageRating:4.8,reviewCount:245,viewCount:1520,createdAt:'2024-01-15T10:00:00Z'},
-            {id:'2',name:'Taylor Swift',category:'Celebrities',description:'Grammy-winning singer-songwriter and cultural phenomenon',imageUrl:'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400',tags:['music','pop','singer','awards'],averageRating:4.9,reviewCount:892,viewCount:5240,createdAt:'2024-01-10T10:00:00Z'},
-            {id:'3',name:'Dwayne Johnson',category:'Celebrities',description:'Actor, producer, and former professional wrestler',imageUrl:'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',tags:['actor','hollywood','wrestling','fitness'],averageRating:4.7,reviewCount:634,viewCount:3890,createdAt:'2024-01-12T10:00:00Z'},
-            {id:'4',name:'Beyoncé',category:'Celebrities',description:'Iconic singer, actress, and cultural icon',imageUrl:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',tags:['music','performer','icon','artist'],averageRating:4.9,reviewCount:756,viewCount:4230,createdAt:'2024-01-08T10:00:00Z'},
-            {id:'5',name:'Cristiano Ronaldo',category:'Celebrities',description:'Football legend and global sports icon',imageUrl:'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=400',tags:['football','sports','athlete','legend'],averageRating:4.8,reviewCount:1024,viewCount:6780,createdAt:'2024-01-05T10:00:00Z'},
-            {id:'6',name:'Emma Watson',category:'Celebrities',description:'Actress and UN Women Goodwill Ambassador',imageUrl:'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',tags:['actress','activist','hollywood','inspiration'],averageRating:4.6,reviewCount:445,viewCount:2890,createdAt:'2024-01-18T10:00:00Z'},
-            {id:'7',name:'Leonardo DiCaprio',category:'Celebrities',description:'Oscar-winning actor and environmental activist',imageUrl:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',tags:['actor','oscar','environment','hollywood'],averageRating:4.7,reviewCount:567,viewCount:3450,createdAt:'2024-01-14T10:00:00Z'},
-            {id:'8',name:'Rihanna',category:'Celebrities',description:'Multi-talented artist and successful entrepreneur',imageUrl:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',tags:['music','business','fashion','icon'],averageRating:4.6,reviewCount:678,viewCount:4120,createdAt:'2024-01-11T10:00:00Z'},
-            {id:'9',name:'Elon Musk',category:'Celebrities',description:'Tech entrepreneur and innovator',imageUrl:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',tags:['tech','business','innovation','space'],averageRating:4.3,reviewCount:923,viewCount:5670,createdAt:'2024-01-09T10:00:00Z'},
-            {id:'10',name:'Oprah Winfrey',category:'Celebrities',description:'Media mogul and philanthropist',imageUrl:'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400',tags:['media','inspiration','business','philanthropy'],averageRating:4.8,reviewCount:534,viewCount:3210,createdAt:'2024-01-16T10:00:00Z'},
-            
-            // Brands (10)
-            {id:'11',name:'Apple',category:'Brands',description:'Leading technology brand known for innovation',imageUrl:'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400',tags:['technology','phone','computer','innovation'],averageRating:4.7,reviewCount:1245,viewCount:7890,createdAt:'2024-01-07T10:00:00Z'},
-            {id:'12',name:'Nike',category:'Brands',description:'Global sports apparel and equipment brand',imageUrl:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',tags:['sports','fashion','athletic','lifestyle'],averageRating:4.6,reviewCount:890,viewCount:5430,createdAt:'2024-01-13T10:00:00Z'},
-            {id:'13',name:'Coca-Cola',category:'Brands',description:'Iconic beverage brand recognized worldwide',imageUrl:'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400',tags:['beverage','classic','global','iconic'],averageRating:4.5,reviewCount:756,viewCount:4670,createdAt:'2024-01-17T10:00:00Z'},
-            {id:'14',name:'Samsung',category:'Brands',description:'Leading electronics and technology company',imageUrl:'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400',tags:['technology','electronics','innovation','mobile'],averageRating:4.5,reviewCount:678,viewCount:4230,createdAt:'2024-01-19T10:00:00Z'},
-            {id:'15',name:'Adidas',category:'Brands',description:'German multinational sportswear brand',imageUrl:'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=400',tags:['sports','fashion','athletic','design'],averageRating:4.6,reviewCount:534,viewCount:3890,createdAt:'2024-01-20T10:00:00Z'},
-            {id:'16',name:'Louis Vuitton',category:'Brands',description:'Luxury fashion and leather goods brand',imageUrl:'https://images.unsplash.com/photo-1591561954557-26941169b49e?w=400',tags:['luxury','fashion','designer','premium'],averageRating:4.7,reviewCount:445,viewCount:3210,createdAt:'2024-01-21T10:00:00Z'},
-            {id:'17',name:'Mercedes-Benz',category:'Brands',description:'German luxury automobile manufacturer',imageUrl:'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=400',tags:['automotive','luxury','german','engineering'],averageRating:4.8,reviewCount:567,viewCount:3890,createdAt:'2024-01-22T10:00:00Z'},
-            {id:'18',name:'Starbucks',category:'Brands',description:'Global coffeehouse chain and brand',imageUrl:'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400',tags:['coffee','beverage','lifestyle','global'],averageRating:4.4,reviewCount:923,viewCount:5670,createdAt:'2024-01-23T10:00:00Z'},
-            {id:'19',name:'Sony',category:'Brands',description:'Japanese electronics and entertainment giant',imageUrl:'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400',tags:['electronics','entertainment','gaming','technology'],averageRating:4.6,reviewCount:678,viewCount:4230,createdAt:'2024-01-24T10:00:00Z'},
-            {id:'20',name:'BMW',category:'Brands',description:'Bavarian luxury automobile brand',imageUrl:'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400',tags:['automotive','luxury','performance','german'],averageRating:4.7,reviewCount:534,viewCount:3670,createdAt:'2024-01-25T10:00:00Z'},
-            
-            // Companies (10)
-            {id:'21',name:'Tesla',category:'Companies',description:'Electric vehicle and clean energy company',imageUrl:'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400',tags:['electric','technology','car','innovation'],averageRating:4.6,reviewCount:1034,viewCount:6890,createdAt:'2024-01-06T10:00:00Z'},
-            {id:'22',name:'Google',category:'Companies',description:'Global technology company specializing in internet services',imageUrl:'https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=400',tags:['technology','search','internet','innovation'],averageRating:4.7,reviewCount:1456,viewCount:8900,createdAt:'2024-01-04T10:00:00Z'},
-            {id:'23',name:'Amazon',category:'Companies',description:'E-commerce and technology conglomerate',imageUrl:'https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=400',tags:['ecommerce','technology','logistics','cloud'],averageRating:4.5,reviewCount:1234,viewCount:7560,createdAt:'2024-01-26T10:00:00Z'},
-            {id:'24',name:'Microsoft',category:'Companies',description:'Technology corporation and software giant',imageUrl:'https://images.unsplash.com/photo-1633114128174-2f8aa49759b0?w=400',tags:['software','technology','cloud','business'],averageRating:4.6,reviewCount:987,viewCount:6230,createdAt:'2024-01-27T10:00:00Z'},
-            {id:'25',name:'Meta',category:'Companies',description:'Social media and technology conglomerate',imageUrl:'https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=400',tags:['social','technology','metaverse','innovation'],averageRating:4.2,reviewCount:1123,viewCount:7890,createdAt:'2024-01-28T10:00:00Z'},
-            {id:'26',name:'Netflix',category:'Companies',description:'Streaming entertainment service provider',imageUrl:'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=400',tags:['streaming','entertainment','media','content'],averageRating:4.5,reviewCount:1567,viewCount:9230,createdAt:'2024-01-29T10:00:00Z'},
-            {id:'27',name:'SpaceX',category:'Companies',description:'Aerospace manufacturer and space transportation',imageUrl:'https://images.unsplash.com/photo-1516849841032-87cbac4d88f7?w=400',tags:['space','technology','innovation','aerospace'],averageRating:4.8,reviewCount:756,viewCount:5670,createdAt:'2024-01-30T10:00:00Z'},
-            {id:'28',name:'Airbnb',category:'Companies',description:'Online marketplace for lodging and tourism',imageUrl:'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',tags:['travel','hospitality','sharing','platform'],averageRating:4.4,reviewCount:890,viewCount:5430,createdAt:'2024-02-01T10:00:00Z'},
-            {id:'29',name:'Spotify',category:'Companies',description:'Music streaming and media services provider',imageUrl:'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=400',tags:['music','streaming','audio','entertainment'],averageRating:4.6,reviewCount:1234,viewCount:7890,createdAt:'2024-02-02T10:00:00Z'},
-            {id:'30',name:'Disney',category:'Companies',description:'Global entertainment and media conglomerate',imageUrl:'https://images.unsplash.com/photo-1601645191163-3fc0d5d64e35?w=400',tags:['entertainment','media','movies','theme parks'],averageRating:4.7,reviewCount:1345,viewCount:8230,createdAt:'2024-02-03T10:00:00Z'},
-            
-            // Sports Clubs (10)
-            {id:'31',name:'Galatasaray',category:'Sports Clubs',description:'UEFA Cup champion Turkish football club',imageUrl:'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400',tags:['football','sports','turkey','champion'],averageRating:4.9,reviewCount:2345,viewCount:12340,createdAt:'2024-01-03T10:00:00Z'},
-            {id:'32',name:'Real Madrid',category:'Sports Clubs',description:'Legendary Spanish football club with rich history',imageUrl:'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400',tags:['football','spain','champions','legacy'],averageRating:4.9,reviewCount:3456,viewCount:15670,createdAt:'2024-02-04T10:00:00Z'},
-            {id:'33',name:'FC Barcelona',category:'Sports Clubs',description:'Catalan football club known for beautiful game',imageUrl:'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400',tags:['football','spain','tiki-taka','legacy'],averageRating:4.8,reviewCount:3234,viewCount:14560,createdAt:'2024-02-05T10:00:00Z'},
-            {id:'34',name:'Manchester United',category:'Sports Clubs',description:'Historic English football club',imageUrl:'https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=400',tags:['football','england','premier','history'],averageRating:4.7,reviewCount:2890,viewCount:13450,createdAt:'2024-02-06T10:00:00Z'},
-            {id:'35',name:'Liverpool FC',category:'Sports Clubs',description:'Six-time European champions',imageUrl:'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400',tags:['football','england','champions','passion'],averageRating:4.8,reviewCount:2567,viewCount:12890,createdAt:'2024-02-07T10:00:00Z'},
-            {id:'36',name:'Los Angeles Lakers',category:'Sports Clubs',description:'Legendary NBA basketball franchise',imageUrl:'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400',tags:['basketball','nba','champions','legacy'],averageRating:4.7,reviewCount:1890,viewCount:9870,createdAt:'2024-02-08T10:00:00Z'},
-            {id:'37',name:'New York Yankees',category:'Sports Clubs',description:'Most successful MLB baseball team',imageUrl:'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=400',tags:['baseball','mlb','champions','history'],averageRating:4.6,reviewCount:1567,viewCount:8760,createdAt:'2024-02-09T10:00:00Z'},
-            {id:'38',name:'Beşiktaş',category:'Sports Clubs',description:'Historic Turkish football club',imageUrl:'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400',tags:['football','turkey','passion','history'],averageRating:4.7,reviewCount:1890,viewCount:10230,createdAt:'2024-02-10T10:00:00Z'},
-            {id:'39',name:'Bayern Munich',category:'Sports Clubs',description:'German football powerhouse',imageUrl:'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=400',tags:['football','germany','champions','excellence'],averageRating:4.8,reviewCount:2345,viewCount:11670,createdAt:'2024-02-11T10:00:00Z'},
-            {id:'40',name:'Chicago Bulls',category:'Sports Clubs',description:'NBA dynasty of the 90s',imageUrl:'https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=400',tags:['basketball','nba','jordan','legacy'],averageRating:4.7,reviewCount:1678,viewCount:9230,createdAt:'2024-02-12T10:00:00Z'},
-            
-            // YouTube Channels (10)
-            {id:'41',name:'MrBeast',category:'YouTube Channels',description:'Most subscribed individual YouTuber',imageUrl:'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400',tags:['youtube','content','entertainment','philanthropy'],averageRating:4.8,reviewCount:3456,viewCount:18900,createdAt:'2024-01-02T10:00:00Z'},
-            {id:'42',name:'PewDiePie',category:'YouTube Channels',description:'Legendary gaming and commentary YouTuber',imageUrl:'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400',tags:['youtube','gaming','comedy','legend'],averageRating:4.7,reviewCount:4567,viewCount:21340,createdAt:'2024-02-13T10:00:00Z'},
-            {id:'43',name:'Dude Perfect',category:'YouTube Channels',description:'Sports entertainment and trick shots',imageUrl:'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=400',tags:['sports','entertainment','tricks','fun'],averageRating:4.6,reviewCount:2345,viewCount:13450,createdAt:'2024-02-14T10:00:00Z'},
-            {id:'44',name:'Markiplier',category:'YouTube Channels',description:'Gaming and comedy content creator',imageUrl:'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',tags:['gaming','comedy','entertainment','personality'],averageRating:4.7,reviewCount:2890,viewCount:15670,createdAt:'2024-02-15T10:00:00Z'},
-            {id:'45',name:'Enes Batur',category:'YouTube Channels',description:'Turkish YouTube sensation',imageUrl:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',tags:['youtube','turkish','entertainment','vlogs'],averageRating:4.5,reviewCount:1890,viewCount:11230,createdAt:'2024-02-16T10:00:00Z'},
-            {id:'46',name:'Rhett & Link',category:'YouTube Channels',description:'Good Mythical Morning creators',imageUrl:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',tags:['comedy','food','entertainment','duo'],averageRating:4.6,reviewCount:1678,viewCount:10890,createdAt:'2024-02-17T10:00:00Z'},
-            {id:'47',name:'Ninja',category:'YouTube Channels',description:'Pro gamer and streaming legend',imageUrl:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',tags:['gaming','esports','streaming','professional'],averageRating:4.5,reviewCount:1567,viewCount:9870,createdAt:'2024-02-18T10:00:00Z'},
-            {id:'48',name:'Linus Tech Tips',category:'YouTube Channels',description:'Technology reviews and tutorials',imageUrl:'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400',tags:['tech','reviews','tutorials','hardware'],averageRating:4.7,reviewCount:2234,viewCount:14560,createdAt:'2024-02-19T10:00:00Z'},
-            {id:'49',name:'Tasty',category:'YouTube Channels',description:'Recipe videos and cooking content',imageUrl:'https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=400',tags:['cooking','food','recipes','lifestyle'],averageRating:4.6,reviewCount:1890,viewCount:12340,createdAt:'2024-02-20T10:00:00Z'},
-            {id:'50',name:'Vsauce',category:'YouTube Channels',description:'Educational science and philosophy',imageUrl:'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400',tags:['education','science','philosophy','learning'],averageRating:4.8,reviewCount:2456,viewCount:15890,createdAt:'2024-02-21T10:00:00Z'},
-            
-            // Movies/TV Shows (10)
-            {id:'51',name:'Breaking Bad',category:'Movies/TV Shows',description:'Critically acclaimed crime drama series',imageUrl:'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400',tags:['tv','drama','crime','masterpiece'],averageRating:4.9,reviewCount:5678,viewCount:25670,createdAt:'2024-02-22T10:00:00Z'},
-            {id:'52',name:'The Godfather',category:'Movies/TV Shows',description:'Epic crime film and cinematic masterpiece',imageUrl:'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400',tags:['movie','crime','classic','legendary'],averageRating:4.9,reviewCount:4567,viewCount:23450,createdAt:'2024-02-23T10:00:00Z'},
-            {id:'53',name:'Game of Thrones',category:'Movies/TV Shows',description:'Fantasy drama television series',imageUrl:'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400',tags:['tv','fantasy','drama','epic'],averageRating:4.6,reviewCount:6789,viewCount:28900,createdAt:'2024-02-24T10:00:00Z'},
-            {id:'54',name:'Inception',category:'Movies/TV Shows',description:'Mind-bending sci-fi thriller',imageUrl:'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=400',tags:['movie','scifi','thriller','nolan'],averageRating:4.8,reviewCount:3456,viewCount:19870,createdAt:'2024-02-25T10:00:00Z'},
-            {id:'55',name:'Stranger Things',category:'Movies/TV Shows',description:'Supernatural horror-thriller series',imageUrl:'https://images.unsplash.com/photo-1512070679279-8988d32161be?w=400',tags:['tv','scifi','horror','netflix'],averageRating:4.7,reviewCount:4567,viewCount:22340,createdAt:'2024-02-26T10:00:00Z'},
-            {id:'56',name:'The Dark Knight',category:'Movies/TV Shows',description:'Superhero film masterpiece',imageUrl:'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=400',tags:['movie','superhero','action','batman'],averageRating:4.9,reviewCount:4890,viewCount:24560,createdAt:'2024-02-27T10:00:00Z'},
-            {id:'57',name:'Friends',category:'Movies/TV Shows',description:'Beloved sitcom comedy series',imageUrl:'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=400',tags:['tv','comedy','sitcom','classic'],averageRating:4.8,reviewCount:5678,viewCount:26780,createdAt:'2024-02-28T10:00:00Z'},
-            {id:'58',name:'Interstellar',category:'Movies/TV Shows',description:'Epic science fiction odyssey',imageUrl:'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400',tags:['movie','scifi','space','epic'],averageRating:4.8,reviewCount:3890,viewCount:21230,createdAt:'2024-03-01T10:00:00Z'},
-            {id:'59',name:'The Office',category:'Movies/TV Shows',description:'Mockumentary sitcom series',imageUrl:'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=400',tags:['tv','comedy','mockumentary','workplace'],averageRating:4.7,reviewCount:4567,viewCount:23890,createdAt:'2024-03-02T10:00:00Z'},
-            {id:'60',name:'Pulp Fiction',category:'Movies/TV Shows',description:'Cult classic crime film',imageUrl:'https://images.unsplash.com/photo-1594908900066-3f47337549d8?w=400',tags:['movie','crime','cult','tarantino'],averageRating:4.8,reviewCount:3678,viewCount:20450,createdAt:'2024-03-03T10:00:00Z'}
+            {id:'1',name:'Taylor Swift',category:'Celebrities',description:'Grammy-winning singer-songwriter',imageUrl:'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400',tags:['music','pop'],averageRating:4.9,reviewCount:892,viewCount:5240,createdAt:'2024-01-10'},
+            {id:'2',name:'Cristiano Ronaldo',category:'Celebrities',description:'Football legend',imageUrl:'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=400',tags:['football','sports'],averageRating:4.8,reviewCount:1024,viewCount:6780,createdAt:'2024-01-05'},
+            {id:'3',name:'Beyoncé',category:'Celebrities',description:'Iconic performer',imageUrl:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',tags:['music','performer'],averageRating:4.9,reviewCount:756,viewCount:4230,createdAt:'2024-01-08'},
+            {id:'4',name:'Leonardo DiCaprio',category:'Celebrities',description:'Oscar-winning actor',imageUrl:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',tags:['actor','hollywood'],averageRating:4.7,reviewCount:567,viewCount:3450,createdAt:'2024-01-14'},
+            {id:'5',name:'Rihanna',category:'Celebrities',description:'Artist and entrepreneur',imageUrl:'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',tags:['music','business'],averageRating:4.6,reviewCount:678,viewCount:4120,createdAt:'2024-01-11'},
+            {id:'6',name:'Dwayne Johnson',category:'Celebrities',description:'Actor and former wrestler',imageUrl:'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',tags:['actor','fitness'],averageRating:4.7,reviewCount:634,viewCount:3890,createdAt:'2024-01-12'},
+            {id:'7',name:'Emma Watson',category:'Celebrities',description:'Actress and activist',imageUrl:'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',tags:['actress','activist'],averageRating:4.6,reviewCount:445,viewCount:2890,createdAt:'2024-01-18'},
+            {id:'8',name:'Elon Musk',category:'Celebrities',description:'Tech entrepreneur',imageUrl:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',tags:['tech','business'],averageRating:4.3,reviewCount:923,viewCount:5670,createdAt:'2024-01-09'},
+            {id:'9',name:'Oprah Winfrey',category:'Celebrities',description:'Media mogul',imageUrl:'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400',tags:['media','inspiration'],averageRating:4.8,reviewCount:534,viewCount:3210,createdAt:'2024-01-16'},
+            {id:'10',name:'Tarkan',category:'Celebrities',description:'Turkish pop icon',imageUrl:'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400',tags:['music','turkish'],averageRating:4.8,reviewCount:245,viewCount:1520,createdAt:'2024-01-15'},
+            {id:'11',name:'Apple',category:'Brands',description:'Technology leader',imageUrl:'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400',tags:['tech','innovation'],averageRating:4.7,reviewCount:1245,viewCount:7890,createdAt:'2024-01-07'},
+            {id:'12',name:'Nike',category:'Brands',description:'Global sports brand',imageUrl:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',tags:['sports','fashion'],averageRating:4.6,reviewCount:890,viewCount:5430,createdAt:'2024-01-13'},
+            {id:'13',name:'Coca-Cola',category:'Brands',description:'Iconic beverage',imageUrl:'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400',tags:['beverage','classic'],averageRating:4.5,reviewCount:756,viewCount:4670,createdAt:'2024-01-17'},
+            {id:'14',name:'Samsung',category:'Brands',description:'Electronics leader',imageUrl:'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400',tags:['tech','electronics'],averageRating:4.5,reviewCount:678,viewCount:4230,createdAt:'2024-01-19'},
+            {id:'15',name:'Adidas',category:'Brands',description:'German sportswear',imageUrl:'https://images.unsplash.com/photo-1556906781-9a412961c28c?w=400',tags:['sports','fashion'],averageRating:4.6,reviewCount:534,viewCount:3890,createdAt:'2024-01-20'},
+            {id:'16',name:'Louis Vuitton',category:'Brands',description:'Luxury fashion',imageUrl:'https://images.unsplash.com/photo-1591561954557-26941169b49e?w=400',tags:['luxury','fashion'],averageRating:4.7,reviewCount:445,viewCount:3210,createdAt:'2024-01-21'},
+            {id:'17',name:'Mercedes-Benz',category:'Brands',description:'Luxury automobiles',imageUrl:'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=400',tags:['automotive','luxury'],averageRating:4.8,reviewCount:567,viewCount:3890,createdAt:'2024-01-22'},
+            {id:'18',name:'Starbucks',category:'Brands',description:'Global coffeehouse',imageUrl:'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400',tags:['coffee','lifestyle'],averageRating:4.4,reviewCount:923,viewCount:5670,createdAt:'2024-01-23'},
+            {id:'19',name:'Sony',category:'Brands',description:'Electronics giant',imageUrl:'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400',tags:['electronics','gaming'],averageRating:4.6,reviewCount:678,viewCount:4230,createdAt:'2024-01-24'},
+            {id:'20',name:'BMW',category:'Brands',description:'Luxury automobiles',imageUrl:'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400',tags:['automotive','luxury'],averageRating:4.7,reviewCount:534,viewCount:3670,createdAt:'2024-01-25'},
+            {id:'21',name:'Tesla',category:'Companies',description:'Electric vehicles',imageUrl:'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400',tags:['electric','innovation'],averageRating:4.6,reviewCount:1034,viewCount:6890,createdAt:'2024-01-06'},
+            {id:'22',name:'Google',category:'Companies',description:'Tech giant',imageUrl:'https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=400',tags:['tech','search'],averageRating:4.7,reviewCount:1456,viewCount:8900,createdAt:'2024-01-04'},
+            {id:'23',name:'Amazon',category:'Companies',description:'E-commerce leader',imageUrl:'https://images.unsplash.com/photo-1523474253046-8cd2748b5fd2?w=400',tags:['ecommerce','tech'],averageRating:4.5,reviewCount:1234,viewCount:7560,createdAt:'2024-01-26'},
+            {id:'24',name:'Microsoft',category:'Companies',description:'Software giant',imageUrl:'https://images.unsplash.com/photo-1633114128174-2f8aa49759b0?w=400',tags:['software','cloud'],averageRating:4.6,reviewCount:987,viewCount:6230,createdAt:'2024-01-27'},
+            {id:'25',name:'Meta',category:'Companies',description:'Social media',imageUrl:'https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=400',tags:['social','tech'],averageRating:4.2,reviewCount:1123,viewCount:7890,createdAt:'2024-01-28'},
+            {id:'26',name:'Netflix',category:'Companies',description:'Streaming service',imageUrl:'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=400',tags:['streaming','media'],averageRating:4.5,reviewCount:1567,viewCount:9230,createdAt:'2024-01-29'},
+            {id:'27',name:'SpaceX',category:'Companies',description:'Space exploration',imageUrl:'https://images.unsplash.com/photo-1516849841032-87cbac4d88f7?w=400',tags:['space','innovation'],averageRating:4.8,reviewCount:756,viewCount:5670,createdAt:'2024-01-30'},
+            {id:'28',name:'Airbnb',category:'Companies',description:'Travel platform',imageUrl:'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',tags:['travel','hospitality'],averageRating:4.4,reviewCount:890,viewCount:5430,createdAt:'2024-02-01'},
+            {id:'29',name:'Spotify',category:'Companies',description:'Music streaming',imageUrl:'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=400',tags:['music','streaming'],averageRating:4.6,reviewCount:1234,viewCount:7890,createdAt:'2024-02-02'},
+            {id:'30',name:'Disney',category:'Companies',description:'Entertainment giant',imageUrl:'https://images.unsplash.com/photo-1601645191163-3fc0d5d64e35?w=400',tags:['entertainment','media'],averageRating:4.7,reviewCount:1345,viewCount:8230,createdAt:'2024-02-03'},
+            {id:'31',name:'Real Madrid',category:'Sports Clubs',description:'Spanish football club',imageUrl:'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400',tags:['football','spain'],averageRating:4.9,reviewCount:3456,viewCount:15670,createdAt:'2024-02-04'},
+            {id:'32',name:'FC Barcelona',category:'Sports Clubs',description:'Catalan football club',imageUrl:'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400',tags:['football','spain'],averageRating:4.8,reviewCount:3234,viewCount:14560,createdAt:'2024-02-05'},
+            {id:'33',name:'Manchester United',category:'Sports Clubs',description:'English football club',imageUrl:'https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=400',tags:['football','england'],averageRating:4.7,reviewCount:2890,viewCount:13450,createdAt:'2024-02-06'},
+            {id:'34',name:'Liverpool FC',category:'Sports Clubs',description:'English champions',imageUrl:'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400',tags:['football','england'],averageRating:4.8,reviewCount:2567,viewCount:12890,createdAt:'2024-02-07'},
+            {id:'35',name:'LA Lakers',category:'Sports Clubs',description:'NBA franchise',imageUrl:'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400',tags:['basketball','nba'],averageRating:4.7,reviewCount:1890,viewCount:9870,createdAt:'2024-02-08'},
+            {id:'36',name:'NY Yankees',category:'Sports Clubs',description:'MLB team',imageUrl:'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=400',tags:['baseball','mlb'],averageRating:4.6,reviewCount:1567,viewCount:8760,createdAt:'2024-02-09'},
+            {id:'37',name:'Galatasaray',category:'Sports Clubs',description:'Turkish football club',imageUrl:'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400',tags:['football','turkey'],averageRating:4.9,reviewCount:2345,viewCount:12340,createdAt:'2024-01-03'},
+            {id:'38',name:'Beşiktaş',category:'Sports Clubs',description:'Turkish club',imageUrl:'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400',tags:['football','turkey'],averageRating:4.7,reviewCount:1890,viewCount:10230,createdAt:'2024-02-10'},
+            {id:'39',name:'Bayern Munich',category:'Sports Clubs',description:'German powerhouse',imageUrl:'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=400',tags:['football','germany'],averageRating:4.8,reviewCount:2345,viewCount:11670,createdAt:'2024-02-11'},
+            {id:'40',name:'Chicago Bulls',category:'Sports Clubs',description:'NBA dynasty',imageUrl:'https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=400',tags:['basketball','nba'],averageRating:4.7,reviewCount:1678,viewCount:9230,createdAt:'2024-02-12'},
+            {id:'41',name:'MrBeast',category:'YouTube Channels',description:'Top YouTuber',imageUrl:'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400',tags:['youtube','content'],averageRating:4.8,reviewCount:3456,viewCount:18900,createdAt:'2024-01-02'},
+            {id:'42',name:'PewDiePie',category:'YouTube Channels',description:'Gaming YouTuber',imageUrl:'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400',tags:['youtube','gaming'],averageRating:4.7,reviewCount:4567,viewCount:21340,createdAt:'2024-02-13'},
+            {id:'43',name:'Dude Perfect',category:'YouTube Channels',description:'Sports entertainment',imageUrl:'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=400',tags:['sports','tricks'],averageRating:4.6,reviewCount:2345,viewCount:13450,createdAt:'2024-02-14'},
+            {id:'44',name:'Markiplier',category:'YouTube Channels',description:'Gaming creator',imageUrl:'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',tags:['gaming','comedy'],averageRating:4.7,reviewCount:2890,viewCount:15670,createdAt:'2024-02-15'},
+            {id:'45',name:'Ninja',category:'YouTube Channels',description:'Pro gamer',imageUrl:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',tags:['gaming','esports'],averageRating:4.5,reviewCount:1567,viewCount:9870,createdAt:'2024-02-18'},
+            {id:'46',name:'Linus Tech Tips',category:'YouTube Channels',description:'Tech reviews',imageUrl:'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400',tags:['tech','reviews'],averageRating:4.7,reviewCount:2234,viewCount:14560,createdAt:'2024-02-19'},
+            {id:'47',name:'Tasty',category:'YouTube Channels',description:'Cooking videos',imageUrl:'https://images.unsplash.com/photo-1466637574441-749b8f19452f?w=400',tags:['cooking','food'],averageRating:4.6,reviewCount:1890,viewCount:12340,createdAt:'2024-02-20'},
+            {id:'48',name:'Vsauce',category:'YouTube Channels',description:'Educational science',imageUrl:'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400',tags:['education','science'],averageRating:4.8,reviewCount:2456,viewCount:15890,createdAt:'2024-02-21'},
+            {id:'49',name:'Enes Batur',category:'YouTube Channels',description:'Turkish YouTuber',imageUrl:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',tags:['youtube','turkish'],averageRating:4.5,reviewCount:1890,viewCount:11230,createdAt:'2024-02-16'},
+            {id:'50',name:'Rhett & Link',category:'YouTube Channels',description:'Comedy duo',imageUrl:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',tags:['comedy','food'],averageRating:4.6,reviewCount:1678,viewCount:10890,createdAt:'2024-02-17'},
+            {id:'51',name:'Breaking Bad',category:'Movies/TV Shows',description:'Crime drama series',imageUrl:'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400',tags:['tv','drama'],averageRating:4.9,reviewCount:5678,viewCount:25670,createdAt:'2024-02-22'},
+            {id:'52',name:'The Godfather',category:'Movies/TV Shows',description:'Epic crime film',imageUrl:'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400',tags:['movie','crime'],averageRating:4.9,reviewCount:4567,viewCount:23450,createdAt:'2024-02-23'},
+            {id:'53',name:'Game of Thrones',category:'Movies/TV Shows',description:'Fantasy series',imageUrl:'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400',tags:['tv','fantasy'],averageRating:4.6,reviewCount:6789,viewCount:28900,createdAt:'2024-02-24'},
+            {id:'54',name:'Inception',category:'Movies/TV Shows',description:'Sci-fi thriller',imageUrl:'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=400',tags:['movie','scifi'],averageRating:4.8,reviewCount:3456,viewCount:19870,createdAt:'2024-02-25'},
+            {id:'55',name:'Stranger Things',category:'Movies/TV Shows',description:'Horror series',imageUrl:'https://images.unsplash.com/photo-1512070679279-8988d32161be?w=400',tags:['tv','horror'],averageRating:4.7,reviewCount:4567,viewCount:22340,createdAt:'2024-02-26'},
+            {id:'56',name:'The Dark Knight',category:'Movies/TV Shows',description:'Superhero film',imageUrl:'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=400',tags:['movie','action'],averageRating:4.9,reviewCount:4890,viewCount:24560,createdAt:'2024-02-27'},
+            {id:'57',name:'Friends',category:'Movies/TV Shows',description:'Comedy sitcom',imageUrl:'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=400',tags:['tv','comedy'],averageRating:4.8,reviewCount:5678,viewCount:26780,createdAt:'2024-02-28'},
+            {id:'58',name:'Interstellar',category:'Movies/TV Shows',description:'Space odyssey',imageUrl:'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400',tags:['movie','scifi'],averageRating:4.8,reviewCount:3890,viewCount:21230,createdAt:'2024-03-01'},
+            {id:'59',name:'The Office',category:'Movies/TV Shows',description:'Workplace comedy',imageUrl:'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=400',tags:['tv','comedy'],averageRating:4.7,reviewCount:4567,viewCount:23890,createdAt:'2024-03-02'},
+            {id:'60',name:'Pulp Fiction',category:'Movies/TV Shows',description:'Cult classic',imageUrl:'https://images.unsplash.com/photo-1594908900066-3f47337549d8?w=400',tags:['movie','crime'],averageRating:4.8,reviewCount:3678,viewCount:20450,createdAt:'2024-03-03'}
         ];
-        
         const reviews = [], users = [];
         let nextItemId = 61, nextUserId = 1, nextReviewId = 1;
 
         function toggleDarkMode() {
             darkMode = !darkMode;
-            document.body.classList.toggle('dark-mode', darkMode);
-            document.body.classList.toggle('light-mode', !darkMode);
+            document.body.classList.toggle('dark', darkMode);
+            document.body.classList.toggle('light', !darkMode);
             document.getElementById('darkIcon').classList.toggle('hidden', !darkMode);
             document.getElementById('lightIcon').classList.toggle('hidden', darkMode);
         }
 
-        function hasUserVoted(userId, itemId) { return userVotes[userId + '-' + itemId] === true; }
-        function markUserVoted(userId, itemId) { userVotes[userId + '-' + itemId] = true; }
-        function isFavorite(itemId) { return favorites.includes(itemId); }
-        
-        function toggleFavorite(itemId, event) {
-            if(event) event.stopPropagation();
-            if(isFavorite(itemId)) {
-                favorites = favorites.filter(id => id !== itemId);
-                addNotification(t('removedFromFavorites'));
-            } else {
-                favorites.push(itemId);
-                addNotification(t('addedToFavorites'));
-            }
-            if(currentPage === 'home') renderItems();
-            if(currentPage === 'favorites') renderFavorites();
-        }
-
-        function addNotification(message) {
-            notifications.push({id: Date.now(), message: message, timestamp: new Date().toISOString()});
-            document.getElementById('notificationDot').classList.remove('hidden');
-        }
-
-        function toggleNotifications() {
-            const panel = document.getElementById('notificationPanel');
-            panel.classList.toggle('hidden');
-            if(!panel.classList.contains('hidden')) {
-                document.getElementById('notificationDot').classList.add('hidden');
-                renderNotifications();
-            }
-        }
-
-        function renderNotifications() {
-            const container = document.getElementById('notificationsList');
-            if(notifications.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 py-4">' + t('noNotifications') + '</p>';
-                return;
-            }
-            let html = '';
-            notifications.slice(-10).reverse().forEach(notif => {
-                html += '<div class="glass rounded-xl p-4 mb-3 hover:shadow-lg transition-shadow"><p class="text-sm font-semibold mb-1">' + notif.message + '</p><p class="text-xs opacity-60">' + new Date(notif.timestamp).toLocaleString() + '</p></div>';
-            });
-            container.innerHTML = html;
-        }
-
-        function toggleAdvancedSearch() {
-            const elem = document.getElementById('advancedSearch');
-            elem.style.maxHeight = elem.style.maxHeight === '0px' || elem.style.maxHeight === '' ? '300px' : '0px';
-        }
-
-        function populateFilterCategory() {
-            const select = document.getElementById('filterCategory');
-            let html = '<option value="">' + t('all') + '</option>';
-            categories.forEach(cat => html += '<option value="' + cat + '">' + cat + '</option>');
-            select.innerHTML = html;
+        function hasUserVoted(u, i) { return userVotes[u+'-'+i] === true; }
+        function markUserVoted(u, i) { userVotes[u+'-'+i] = true; }
+        function isFavorite(i) { return favorites.includes(i); }
+        function toggleFavorite(i, e) {
+            if(e) e.stopPropagation();
+            if(isFavorite(i)) favorites = favorites.filter(id => id !== i); else favorites.push(i);
+            if(currentPage === 'home') renderItems(); if(currentPage === 'favorites') renderFavorites();
         }
 
         function randomItem() {
-            const randomIdx = Math.floor(Math.random() * items.length);
-            viewItem(items[randomIdx].id);
+            const idx = Math.floor(Math.random() * items.length);
+            viewItem(items[idx].id);
         }
 
         function showAuthModal(mode) {
@@ -811,9 +319,8 @@
         function handleAuth() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            
             if(email === 'admin' && password === '321') {
-                currentUser = {id: 'admin', email: 'admin@oolido.com', displayName: 'Administrator', isAdmin: true};
+                currentUser = {id: 'admin', email: 'admin@oolido.com', displayName: 'Admin', isAdmin: true};
                 isAdmin = true;
                 document.getElementById('adminBtn').classList.remove('hidden');
                 closeAuthModal();
@@ -821,29 +328,13 @@
                 showPage('admin');
                 return;
             }
-            
             if(authMode === 'login') {
                 const user = users.find(u => u.email === email && u.password === password);
-                if(user) {
-                    currentUser = user;
-                    closeAuthModal();
-                    showMainApp();
-                } else {
-                    alert('Invalid credentials!');
-                }
+                if(user) { currentUser = user; closeAuthModal(); showMainApp(); } else alert('Invalid!');
             } else {
                 const displayName = document.getElementById('displayName').value;
-                if(!displayName || !email || !password) {
-                    alert('Please fill all fields!');
-                    return;
-                }
-                const newUser = {
-                    id: 'user-' + nextUserId++,
-                    email: email,
-                    password: password,
-                    displayName: displayName,
-                    createdAt: new Date().toISOString()
-                };
+                if(!displayName || !email || !password) { alert('Fill all fields!'); return; }
+                const newUser = {id: 'user-' + nextUserId++, email, password, displayName, createdAt: new Date().toISOString()};
                 users.push(newUser);
                 currentUser = newUser;
                 closeAuthModal();
@@ -852,12 +343,7 @@
         }
 
         function handleGoogleLogin() {
-            const googleUser = {
-                id: 'google-' + nextUserId++,
-                email: 'user' + nextUserId + '@gmail.com',
-                displayName: 'Google User',
-                createdAt: new Date().toISOString()
-            };
+            const googleUser = {id: 'google-' + nextUserId++, email: 'user@gmail.com', displayName: 'Google User', createdAt: new Date().toISOString()};
             users.push(googleUser);
             currentUser = googleUser;
             showMainApp();
@@ -880,41 +366,22 @@
 
         function showPage(page) {
             currentPage = page;
-            ['homePage','detailPage','versusPage','trendsPage','favoritesPage','profilePage','adminPage'].forEach(p => {
-                document.getElementById(p).classList.add('hidden');
-            });
-            
+            ['homePage','detailPage','versusPage','favoritesPage','profilePage','adminPage'].forEach(p => document.getElementById(p).classList.add('hidden'));
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            
-            if(page === 'home') {
-                document.getElementById('homePage').classList.remove('hidden');
-                document.getElementById('homeNav').classList.add('active');
-                renderItems();
-            } else if(page === 'versus') {
-                document.getElementById('versusPage').classList.remove('hidden');
-                document.getElementById('versusNav').classList.add('active');
-                renderVersusSelects();
-            } else if(page === 'trends') {
-                document.getElementById('trendsPage').classList.remove('hidden');
-                document.getElementById('trendsNav').classList.add('active');
-                renderTrends();
-            } else if(page === 'favorites') {
-                document.getElementById('favoritesPage').classList.remove('hidden');
-                document.getElementById('favoritesNav').classList.add('active');
-                renderFavorites();
-            } else if(page === 'profile') {
-                document.getElementById('profilePage').classList.remove('hidden');
-                document.getElementById('profileNav').classList.add('active');
-                renderProfile();
-            } else if(page === 'admin' && isAdmin) {
-                document.getElementById('adminPage').classList.remove('hidden');
-                renderAdmin();
-            }
+            if(page === 'home') { document.getElementById('homePage').classList.remove('hidden'); document.getElementById('homeNav').classList.add('active'); renderItems(); }
+            else if(page === 'versus') { document.getElementById('versusPage').classList.remove('hidden'); document.getElementById('versusNav').classList.add('active'); renderVersusSelects(); }
+            else if(page === 'favorites') { document.getElementById('favoritesPage').classList.remove('hidden'); document.getElementById('favoritesNav').classList.add('active'); renderFavorites(); }
+            else if(page === 'profile') { document.getElementById('profilePage').classList.remove('hidden'); document.getElementById('profileNav').classList.add('active'); renderProfile(); }
+            else if(page === 'admin' && isAdmin) { document.getElementById('adminPage').classList.remove('hidden'); renderAdmin(); }
         }
 
-        function backToHome() {
-            selectedItem = null;
-            showPage('home');
+        function backToHome() { selectedItem = null; showPage('home'); }
+
+        function populateFilterCategory() {
+            const select = document.getElementById('filterCategory');
+            let html = '<option value="">' + t('all') + '</option>';
+            categories.forEach(cat => html += '<option value="' + cat + '">' + cat + '</option>');
+            select.innerHTML = html;
         }
 
         function filterItems() {
@@ -922,22 +389,16 @@
             const filterCat = document.getElementById('filterCategory').value;
             const filterRat = parseFloat(document.getElementById('filterRating').value);
             const sortBy = document.getElementById('sortBy').value;
-            
             let filtered = items.filter(item => {
-                const matchesSearch = item.name.toLowerCase().includes(searchTerm) || 
-                                     item.description.toLowerCase().includes(searchTerm) || 
-                                     item.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+                const matchesSearch = item.name.toLowerCase().includes(searchTerm) || item.description.toLowerCase().includes(searchTerm) || item.tags.some(tag => tag.toLowerCase().includes(searchTerm));
                 const matchesCategory = !filterCat || item.category === filterCat;
                 const matchesRating = item.averageRating >= filterRat;
                 return matchesSearch && matchesCategory && matchesRating;
             });
-            
             if(sortBy === 'rating') filtered.sort((a, b) => b.averageRating - a.averageRating);
             else if(sortBy === 'reviews') filtered.sort((a, b) => b.reviewCount - a.reviewCount);
-            else if(sortBy === 'views') filtered.sort((a, b) => b.viewCount - a.viewCount);
             else if(sortBy === 'newest') filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             else if(sortBy === 'trending') filtered.sort((a, b) => (b.reviewCount * 2 + b.viewCount) - (a.reviewCount * 2 + a.viewCount));
-            
             renderItemsGrid(filtered);
         }
 
@@ -946,28 +407,25 @@
         function renderItemsGrid(itemsList) {
             const container = document.getElementById('itemsGrid');
             if(itemsList.length === 0) {
-                container.innerHTML = '<div class="col-span-full text-center py-20 glass rounded-3xl"><p class="text-2xl font-semibold opacity-60">' + t('noData') + '</p></div>';
+                container.innerHTML = '<div class="col-span-full text-center py-20 glass rounded-3xl"><p class="text-2xl font-semibold">No results found</p></div>';
                 return;
             }
-            
             let html = '';
             itemsList.forEach(item => {
                 const voted = hasUserVoted(currentUser.id, item.id);
                 const fav = isFavorite(item.id);
                 const rating = item.averageRating > 0 ? item.averageRating.toFixed(1) : '—';
-                
                 html += '<div class="card glass rounded-2xl overflow-hidden shadow-lg cursor-pointer" onclick="viewItem(\'' + item.id + '\')">';
-                html += '<div class="relative h-48 overflow-hidden"><img src="' + item.imageUrl + '" class="w-full h-full object-cover image-hover">';
+                html += '<div class="relative h-48"><img src="' + item.imageUrl + '" class="w-full h-full object-cover">';
                 html += '<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>';
-                if(voted) html += '<div class="absolute top-3 left-3 gradient-secondary text-white px-3 py-1.5 rounded-full text-xs font-bold">✓ ' + t('youVoted') + '</div>';
-                html += '<button onclick="toggleFavorite(\'' + item.id + '\', event)" class="absolute top-3 right-3 text-3xl hover:scale-125 transition-transform filter drop-shadow-lg">' + (fav ? '⭐' : '☆') + '</button>';
-                html += '<div class="absolute bottom-3 left-3 right-3"><h3 class="text-white font-bold text-lg mb-2 truncate drop-shadow-lg">' + item.name + '</h3>';
+                if(voted) html += '<div class="absolute top-3 left-3 bg-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-bold">✓ ' + t('youVoted') + '</div>';
+                html += '<button onclick="toggleFavorite(\'' + item.id + '\', event)" class="absolute top-3 right-3 text-3xl hover:scale-125 transition-transform">' + (fav ? '⭐' : '☆') + '</button>';
+                html += '<div class="absolute bottom-3 left-3 right-3"><h3 class="text-white font-bold text-lg mb-2 truncate">' + item.name + '</h3>';
                 html += '<div class="flex items-center gap-3"><div class="flex items-center gap-1">' + renderStars(Math.round(item.averageRating), 'small', true) + '</div>';
-                html += '<span class="text-white font-black text-xl drop-shadow-lg">' + rating + '</span></div></div></div>';
+                html += '<span class="text-white font-black text-xl">' + rating + '</span></div></div></div>';
                 html += '<div class="p-4"><p class="text-xs font-semibold opacity-60 mb-2">' + item.category + '</p>';
-                html += '<div class="flex items-center justify-between text-xs font-semibold"><span class="flex items-center gap-1"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>' + item.viewCount + '</span><span class="flex items-center gap-1"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>' + item.reviewCount + '</span></div></div></div>';
+                html += '<div class="flex items-center justify-between text-xs font-semibold"><span>' + item.reviewCount + ' ' + t('reviews') + '</span><span>' + item.viewCount + ' ' + t('views') + '</span></div></div></div>';
             });
-            
             container.innerHTML = html;
         }
 
@@ -976,7 +434,7 @@
             let html = '<div class="flex gap-1">';
             for(let i = 1; i <= 5; i++) {
                 const filled = i <= rating;
-                html += '<svg class="star ' + sizeClass + (readonly ? '' : ' cursor-pointer') + '" fill="' + (filled ? '#fbbf24' : 'none') + '" stroke="' + (filled ? '#fbbf24' : '#9ca3af') + '" stroke-width="2" viewBox="0 0 24 24" ' + (readonly ? '' : 'onclick="setRating(' + i + '); event.stopPropagation();"') + '><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>';
+                html += '<svg class="' + sizeClass + '" fill="' + (filled ? '#fbbf24' : 'none') + '" stroke="' + (filled ? '#fbbf24' : '#9ca3af') + '" stroke-width="2" viewBox="0 0 24 24" ' + (readonly ? '' : 'onclick="setRating(' + i + '); event.stopPropagation();"') + '><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>';
             }
             html += '</div>';
             return html;
@@ -991,125 +449,79 @@
         function viewItem(itemId) {
             const item = items.find(i => i.id === itemId);
             if(!item) return;
-            
             item.viewCount++;
             selectedItem = item;
-            
             document.getElementById('homePage').classList.add('hidden');
             document.getElementById('detailPage').classList.remove('hidden');
-            
             const itemReviews = reviews.filter(r => r.itemId === itemId);
             const voted = hasUserVoted(currentUser.id, itemId);
             const fav = isFavorite(itemId);
             const rating = item.averageRating > 0 ? item.averageRating.toFixed(1) : '0.0';
-            
             let html = '<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">';
-            
-            // Left Column
             html += '<div class="lg:col-span-1"><div class="glass rounded-2xl overflow-hidden shadow-2xl sticky top-24">';
-            html += '<div class="relative h-96 overflow-hidden"><img src="' + item.imageUrl + '" class="w-full h-full object-cover">';
+            html += '<div class="relative h-96"><img src="' + item.imageUrl + '" class="w-full h-full object-cover">';
             html += '<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>';
-            html += '<button onclick="randomItem()" class="btn absolute top-4 right-4 gradient-primary text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 shadow-xl">';
+            html += '<button onclick="randomItem()" class="btn absolute top-4 right-4 grad-primary text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2">';
             html += '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>' + t('random') + '</button>';
-            html += '<div class="absolute bottom-6 left-6 right-6"><h1 class="text-white text-4xl font-black mb-3 drop-shadow-lg leading-tight">' + item.name + '</h1>';
-            html += '<div class="flex items-center gap-3">' + renderStars(Math.round(item.averageRating), 'normal', true) + '<span class="text-white font-black text-2xl drop-shadow-lg">' + rating + '</span></div></div></div>';
+            html += '<div class="absolute bottom-6 left-6 right-6"><h1 class="text-white text-4xl font-black mb-3">' + item.name + '</h1>';
+            html += '<div class="flex items-center gap-3">' + renderStars(Math.round(item.averageRating), 'normal', true) + '<span class="text-white font-black text-2xl">' + rating + '</span></div></div></div>';
             html += '<div class="p-8"><div class="flex items-center justify-between mb-6">';
-            html += '<div class="rating-badge gradient-primary text-white">' + rating + '</div>';
-            html += '<button onclick="toggleFavorite(\'' + item.id + '\', event)" class="btn gradient-secondary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg">' + (fav ? '⭐' : '☆') + ' ' + (fav ? 'Saved' : 'Save') + '</button></div>';
+            html += '<div class="w-24 h-24 grad-primary rounded-full flex items-center justify-center text-white text-3xl font-black">' + rating + '</div>';
+            html += '<button onclick="toggleFavorite(\'' + item.id + '\', event)" class="btn grad-primary text-white px-6 py-3 rounded-xl font-bold">' + (fav ? '⭐ Saved' : '☆ Save') + '</button></div>';
             html += '<div class="space-y-4">';
-            html += '<div class="flex items-center justify-between py-3 border-b border-gray-200"><span class="font-bold">' + t('category') + '</span><span class="badge-premium gradient-primary text-white">' + item.category + '</span></div>';
-            html += '<div class="flex items-center justify-between py-3 border-b border-gray-200"><span class="font-bold">' + t('totalReviews') + '</span><span class="font-black text-xl gradient-text">' + item.reviewCount + '</span></div>';
-            html += '<div class="flex items-center justify-between py-3 border-b border-gray-200"><span class="font-bold">' + t('views') + '</span><span class="font-black text-xl gradient-text">' + item.viewCount + '</span></div>';
-            html += '</div><div class="mt-6"><p class="text-sm font-bold mb-3">' + t('tags') + '</p><div class="tag-cloud flex flex-wrap gap-2">';
-            item.tags.forEach(tag => html += '<span class="badge-premium glass">#' + tag + '</span>');
+            html += '<div class="flex items-center justify-between py-3 border-b"><span class="font-bold">Category</span><span class="px-4 py-2 grad-primary text-white rounded-full text-sm font-bold">' + item.category + '</span></div>';
+            html += '<div class="flex items-center justify-between py-3 border-b"><span class="font-bold">' + t('totalReviews') + '</span><span class="font-black text-xl grad-text">' + item.reviewCount + '</span></div>';
+            html += '<div class="flex items-center justify-between py-3 border-b"><span class="font-bold">' + t('views') + '</span><span class="font-black text-xl grad-text">' + item.viewCount + '</span></div>';
+            html += '</div><div class="mt-6"><p class="text-sm font-bold mb-3">Tags</p><div class="flex flex-wrap gap-2">';
+            item.tags.forEach(tag => html += '<span class="px-3 py-1 glass rounded-full text-sm font-bold">#' + tag + '</span>');
             html += '</div></div></div></div></div>';
-            
-            // Right Column
             html += '<div class="lg:col-span-2 space-y-8">';
-            html += '<div class="glass rounded-2xl p-8 shadow-xl"><h2 class="text-3xl font-black gradient-text mb-4">' + t('description') + '</h2><p class="text-lg leading-relaxed opacity-90">' + item.description + '</p></div>';
-            
+            html += '<div class="glass rounded-2xl p-8 shadow-xl"><h2 class="text-3xl font-black grad-text mb-4">Description</h2><p class="text-lg leading-relaxed">' + item.description + '</p></div>';
             if(!voted) {
-                html += '<div class="glass rounded-2xl p-8 shadow-xl"><h2 class="text-3xl font-black gradient-text mb-8">' + t('submitReview') + '</h2>';
+                html += '<div class="glass rounded-2xl p-8 shadow-xl"><h2 class="text-3xl font-black grad-text mb-8">' + t('submitReview') + '</h2>';
                 html += '<div class="space-y-6"><div><label class="block font-bold text-lg mb-4">' + t('yourRating') + '</label><div id="newRatingStars">' + renderStars(0, 'large', false) + '</div></div>';
-                html += '<div><label class="block font-bold text-lg mb-4">' + t('yourComment') + '</label><textarea id="newComment" placeholder="' + t('yourComment') + '..." rows="5" class="w-full px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow text-lg"></textarea></div>';
-                html += '<button onclick="submitReview(\'' + itemId + '\')" class="btn gradient-primary text-white px-10 py-4 rounded-xl font-bold shadow-xl text-lg">' + t('submit') + '</button></div></div>';
+                html += '<div><label class="block font-bold text-lg mb-4">' + t('yourComment') + '</label><textarea id="newComment" placeholder="' + t('yourComment') + '..." rows="5" class="w-full px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none text-lg"></textarea></div>';
+                html += '<button onclick="submitReview(\'' + itemId + '\')" class="btn grad-primary text-white px-10 py-4 rounded-xl font-bold text-lg">' + t('submit') + '</button></div></div>';
             } else {
-                html += '<div class="glass rounded-2xl p-8 shadow-xl gradient-warning"><div class="flex items-center gap-6"><div class="rating-badge bg-white text-purple-600">✓</div>';
-                html += '<div><h3 class="text-3xl font-black text-white mb-2">' + t('alreadyVoted') + '</h3><p class="text-white text-lg opacity-90">You can only vote once per item</p></div></div></div>';
+                html += '<div class="glass rounded-2xl p-8 shadow-xl" style="background: linear-gradient(135deg, #f093fb, #f5576c);"><div class="flex items-center gap-6"><div class="w-20 h-20 bg-white rounded-full flex items-center justify-center text-purple-600 text-3xl font-black">✓</div>';
+                html += '<div><h3 class="text-3xl font-black text-white mb-2">' + t('alreadyVoted') + '</h3><p class="text-white text-lg">You can only vote once</p></div></div></div>';
             }
-            
-            html += '<div class="glass rounded-2xl p-8 shadow-xl"><h2 class="text-3xl font-black gradient-text mb-8">' + t('reviews') + ' <span class="text-2xl">(' + itemReviews.length + ')</span></h2>';
+            html += '<div class="glass rounded-2xl p-8 shadow-xl"><h2 class="text-3xl font-black grad-text mb-8">' + t('reviews') + ' (' + itemReviews.length + ')</h2>';
             if(itemReviews.length > 0) {
                 html += '<div class="space-y-5">';
                 itemReviews.forEach(review => {
-                    html += '<div class="glass rounded-xl p-6 hover:shadow-lg transition-shadow"><div class="flex items-center justify-between mb-4"><span class="font-black text-xl">' + review.userName + '</span><div class="flex items-center gap-3">' + renderStars(review.rating, 'small', true) + '<span class="font-black text-lg">' + review.rating + '.0</span></div></div>';
-                    if(review.comment) html += '<p class="text-base leading-relaxed mb-3 opacity-90">' + review.comment + '</p>';
+                    html += '<div class="glass rounded-xl p-6"><div class="flex items-center justify-between mb-4"><span class="font-black text-xl">' + review.userName + '</span><div class="flex items-center gap-3">' + renderStars(review.rating, 'small', true) + '<span class="font-black text-lg">' + review.rating + '.0</span></div></div>';
+                    if(review.comment) html += '<p class="text-base leading-relaxed mb-3">' + review.comment + '</p>';
                     html += '<p class="text-xs font-semibold opacity-60">' + new Date(review.createdAt).toLocaleString() + '</p></div>';
                 });
                 html += '</div>';
             } else {
                 html += '<p class="text-center opacity-60 py-12 text-xl">' + t('noReviews') + '</p>';
             }
-            html += '</div>';
-            
-            // Similar Items
-            const similarItems = items.filter(i => i.id !== item.id && (i.category === item.category || i.tags.some(tag => item.tags.includes(tag)))).slice(0, 3);
-            if(similarItems.length > 0) {
-                html += '<div class="glass rounded-2xl p-8 shadow-xl"><h2 class="text-3xl font-black gradient-text mb-8">' + t('similarItems') + '</h2><div class="grid grid-cols-3 gap-6">';
-                similarItems.forEach(sim => {
-                    html += '<div class="card glass rounded-xl overflow-hidden cursor-pointer shadow-lg" onclick="viewItem(\'' + sim.id + '\'); window.scrollTo(0,0);"><div class="relative h-40 overflow-hidden"><img src="' + sim.imageUrl + '" class="w-full h-full object-cover image-hover">';
-                    html += '<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div></div>';
-                    html += '<div class="p-4"><h4 class="font-bold text-base mb-2 truncate">' + sim.name + '</h4><div class="flex items-center gap-2">' + renderStars(Math.round(sim.averageRating), 'small', true) + '<span class="text-sm font-bold">' + (sim.averageRating > 0 ? sim.averageRating.toFixed(1) : '—') + '</span></div></div></div>';
-                });
-                html += '</div></div>';
-            }
-            
-            html += '</div></div>';
-            
+            html += '</div></div></div>';
             document.getElementById('itemDetail').innerHTML = html;
         }
 
         function submitReview(itemId) {
-            if(hasUserVoted(currentUser.id, itemId)) {
-                alert(t('alreadyVoted'));
-                return;
-            }
-            if(newRating === 0) {
-                alert('Please select a rating!');
-                return;
-            }
-            
+            if(hasUserVoted(currentUser.id, itemId)) { alert(t('alreadyVoted')); return; }
+            if(newRating === 0) { alert('Please select a rating!'); return; }
             const comment = document.getElementById('newComment').value;
-            const review = {
-                id: 'review-' + nextReviewId++,
-                itemId: itemId,
-                itemName: selectedItem.name,
-                userId: currentUser.id,
-                userName: currentUser.displayName,
-                rating: newRating,
-                comment: comment,
-                createdAt: new Date().toISOString()
-            };
-            
+            const review = {id: 'review-' + nextReviewId++, itemId, itemName: selectedItem.name, userId: currentUser.id, userName: currentUser.displayName, rating: newRating, comment, createdAt: new Date().toISOString()};
             reviews.push(review);
-            
             const item = items.find(i => i.id === itemId);
             const newReviewCount = item.reviewCount + 1;
             const newAverageRating = ((item.averageRating * item.reviewCount) + newRating) / newReviewCount;
             item.reviewCount = newReviewCount;
             item.averageRating = newAverageRating;
-            
             markUserVoted(currentUser.id, itemId);
             newRating = 0;
-            
-            addNotification(t('reviewSubmitted'));
             viewItem(itemId);
         }
 
         function renderVersusSelects() {
             const vs1 = document.getElementById('versus1');
             const vs2 = document.getElementById('versus2');
-            let html = '<option value="">Select an item...</option>';
+            let html = '<option value="">Select...</option>';
             items.forEach(item => html += '<option value="' + item.id + '">' + item.name + '</option>');
             vs1.innerHTML = html;
             vs2.innerHTML = html;
@@ -1118,136 +530,49 @@
         function updateVersus() {
             const id1 = document.getElementById('versus1').value;
             const id2 = document.getElementById('versus2').value;
-            
-            if(!id1 || !id2) {
-                document.getElementById('versusComparison').innerHTML = '';
-                return;
-            }
-            
+            if(!id1 || !id2) { document.getElementById('versusComparison').innerHTML = ''; return; }
             const item1 = items.find(i => i.id === id1);
             const item2 = items.find(i => i.id === id2);
-            
             const score1 = item1.averageRating * 20 + item1.reviewCount * 2 + item1.viewCount;
             const score2 = item2.averageRating * 20 + item2.reviewCount * 2 + item2.viewCount;
             const totalScore = score1 + score2;
             const percentage1 = totalScore > 0 ? (score1 / totalScore * 100).toFixed(1) : 50;
             const percentage2 = totalScore > 0 ? (score2 / totalScore * 100).toFixed(1) : 50;
             const winner = score1 > score2 ? item1 : (score2 > score1 ? item2 : null);
-            
             let html = '<div class="glass rounded-3xl p-10 shadow-2xl mb-8">';
-            html += '<h3 class="text-3xl font-black gradient-text mb-8 text-center">' + t('overallScore') + '</h3>';
+            html += '<h3 class="text-3xl font-black grad-text mb-8 text-center">' + t('overallScore') + '</h3>';
             html += '<div class="space-y-6">';
-            html += '<div class="flex items-center gap-6"><span class="font-black text-xl flex-shrink-0 w-40 truncate">' + item1.name + '</span>';
-            html += '<div class="flex-1 vs-meter"><div class="vs-meter-fill gradient-primary" style="width: ' + percentage1 + '%"></div></div>';
-            html += '<span class="font-black text-2xl gradient-text">' + percentage1 + '%</span></div>';
-            html += '<div class="flex items-center gap-6"><span class="font-black text-xl flex-shrink-0 w-40 truncate">' + item2.name + '</span>';
-            html += '<div class="flex-1 vs-meter"><div class="vs-meter-fill gradient-secondary" style="width: ' + percentage2 + '%"></div></div>';
-            html += '<span class="font-black text-2xl gradient-text">' + percentage2 + '%</span></div>';
+            html += '<div class="flex items-center gap-6"><span class="font-black text-xl w-40 truncate">' + item1.name + '</span>';
+            html += '<div class="flex-1 h-7 bg-gray-200 rounded-full overflow-hidden"><div class="h-full grad-primary" style="width: ' + percentage1 + '%"></div></div>';
+            html += '<span class="font-black text-2xl grad-text">' + percentage1 + '%</span></div>';
+            html += '<div class="flex items-center gap-6"><span class="font-black text-xl w-40 truncate">' + item2.name + '</span>';
+            html += '<div class="flex-1 h-7 bg-gray-200 rounded-full overflow-hidden"><div class="h-full" style="background: linear-gradient(135deg, #f093fb, #f5576c); width: ' + percentage2 + '%"></div></div>';
+            html += '<span class="font-black text-2xl grad-text">' + percentage2 + '%</span></div>';
             html += '</div>';
-            if(winner) {
-                html += '<div class="mt-10 text-center"><span class="inline-block gradient-primary text-white px-10 py-4 rounded-full font-black text-2xl shadow-xl">🏆 ' + t('winner') + ': ' + winner.name + '</span></div>';
-            }
+            if(winner) html += '<div class="mt-10 text-center"><span class="inline-block grad-primary text-white px-10 py-4 rounded-full font-black text-2xl">🏆 ' + t('winner') + ': ' + winner.name + '</span></div>';
             html += '</div>';
-            
-            html += '<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">';
-            [item1, item2].forEach((item) => {
+            html += '<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">';
+            [item1, item2].forEach(item => {
                 html += '<div class="glass rounded-2xl overflow-hidden shadow-2xl">';
-                html += '<div class="relative h-80 overflow-hidden"><img src="' + item.imageUrl + '" class="w-full h-full object-cover">';
+                html += '<div class="relative h-80"><img src="' + item.imageUrl + '" class="w-full h-full object-cover">';
                 html += '<div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent"></div>';
-                html += '<div class="absolute bottom-6 left-6 right-6"><h3 class="text-white text-3xl font-black mb-3 drop-shadow-lg">' + item.name + '</h3>';
-                html += '<div class="flex items-center gap-3">' + renderStars(Math.round(item.averageRating), 'normal', true) + '<span class="text-white font-black text-2xl drop-shadow-lg">' + (item.averageRating > 0 ? item.averageRating.toFixed(1) : '0.0') + '</span></div></div></div>';
-                html += '<div class="p-8 space-y-6">';
-                html += '<p class="text-base leading-relaxed opacity-90">' + item.description + '</p>';
+                html += '<div class="absolute bottom-6 left-6 right-6"><h3 class="text-white text-3xl font-black mb-3">' + item.name + '</h3>';
+                html += '<div class="flex items-center gap-3">' + renderStars(Math.round(item.averageRating), 'normal', true) + '<span class="text-white font-black text-2xl">' + (item.averageRating > 0 ? item.averageRating.toFixed(1) : '0.0') + '</span></div></div></div>';
+                html += '<div class="p-8 space-y-6"><p class="text-base leading-relaxed">' + item.description + '</p>';
                 html += '<div class="grid grid-cols-2 gap-4">';
-                html += '<div class="text-center p-5 glass rounded-xl"><p class="text-3xl font-black gradient-text mb-1">' + (item.averageRating > 0 ? item.averageRating.toFixed(1) : '0.0') + '</p><p class="text-xs font-bold opacity-60">' + t('avgRating') + '</p></div>';
-                html += '<div class="text-center p-5 glass rounded-xl"><p class="text-3xl font-black gradient-text mb-1">' + item.reviewCount + '</p><p class="text-xs font-bold opacity-60">' + t('reviews') + '</p></div>';
-                html += '<div class="text-center p-5 glass rounded-xl"><p class="text-3xl font-black gradient-text mb-1">' + item.viewCount + '</p><p class="text-xs font-bold opacity-60">' + t('views') + '</p></div>';
-                html += '<div class="text-center p-5 glass rounded-xl"><p class="text-3xl font-black gradient-text mb-1">' + Math.round((item.averageRating * 20 + item.reviewCount * 2 + item.viewCount)/50) + '</p><p class="text-xs font-bold opacity-60">Score</p></div>';
+                html += '<div class="text-center p-5 glass rounded-xl"><p class="text-3xl font-black grad-text mb-1">' + (item.averageRating > 0 ? item.averageRating.toFixed(1) : '0.0') + '</p><p class="text-xs font-bold opacity-60">' + t('avgRating') + '</p></div>';
+                html += '<div class="text-center p-5 glass rounded-xl"><p class="text-3xl font-black grad-text mb-1">' + item.reviewCount + '</p><p class="text-xs font-bold opacity-60">' + t('reviews') + '</p></div>';
                 html += '</div></div></div>';
             });
             html += '</div>';
-            
-            html += '<div class="glass rounded-2xl p-8 shadow-xl"><h3 class="text-3xl font-black gradient-text mb-8">' + t('statistics') + '</h3>';
-            html += '<div class="space-y-6">';
-            
-            const stats = [
-                {label: t('avgRating'), val1: item1.averageRating.toFixed(1), val2: item2.averageRating.toFixed(1)},
-                {label: t('totalReviews'), val1: item1.reviewCount, val2: item2.reviewCount},
-                {label: t('views'), val1: item1.viewCount, val2: item2.viewCount}
-            ];
-            
-            stats.forEach(stat => {
-                const max = Math.max(parseFloat(stat.val1), parseFloat(stat.val2));
-                const per1 = max > 0 ? (parseFloat(stat.val1) / max * 100) : 0;
-                const per2 = max > 0 ? (parseFloat(stat.val2) / max * 100) : 0;
-                
-                html += '<div><p class="font-black text-lg mb-4">' + stat.label + '</p>';
-                html += '<div class="grid grid-cols-2 gap-6"><div><div class="flex items-center justify-between mb-2"><span class="font-bold">' + item1.name + '</span><span class="font-black text-lg">' + stat.val1 + '</span></div>';
-                html += '<div class="vs-meter"><div class="vs-meter-fill gradient-primary" style="width: ' + per1 + '%"></div></div></div>';
-                html += '<div><div class="flex items-center justify-between mb-2"><span class="font-bold">' + item2.name + '</span><span class="font-black text-lg">' + stat.val2 + '</span></div>';
-                html += '<div class="vs-meter"><div class="vs-meter-fill gradient-secondary" style="width: ' + per2 + '%"></div></div></div></div></div>';
-            });
-            
-            html += '</div></div>';
-            
             document.getElementById('versusComparison').innerHTML = html;
-        }
-
-        function renderTrends() {
-            const lastMonth = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-            const rising = items.filter(i => {
-                const recentReviews = reviews.filter(r => r.itemId === i.id && new Date(r.createdAt) > lastMonth).length;
-                return recentReviews > 0 && i.reviewCount > 0;
-            }).sort((a, b) => b.reviewCount - a.reviewCount).slice(0, 6);
-            
-            const falling = items.filter(i => i.reviewCount > 0).sort((a, b) => a.reviewCount - b.reviewCount).slice(0, 6);
-            
-            let html = '<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">';
-            
-            html += '<div class="glass rounded-2xl p-8 shadow-xl">';
-            html += '<h3 class="text-3xl font-black text-green-600 mb-6 flex items-center gap-3"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>' + t('risingThisMonth') + '</h3>';
-            if(rising.length > 0) {
-                html += '<div class="space-y-4">';
-                rising.forEach((item, idx) => {
-                    html += '<div class="flex items-center gap-5 p-5 glass rounded-xl cursor-pointer hover:shadow-lg transition-all" onclick="viewItem(\'' + item.id + '\')">';
-                    html += '<div class="text-3xl font-black gradient-text">#' + (idx + 1) + '</div>';
-                    html += '<img src="' + item.imageUrl + '" class="w-20 h-20 rounded-xl object-cover shadow-lg">';
-                    html += '<div class="flex-1"><p class="font-black text-lg mb-1">' + item.name + '</p>' + renderStars(Math.round(item.averageRating), 'small', true) + '</div>';
-                    html += '<span class="text-5xl">📈</span></div>';
-                });
-                html += '</div>';
-            } else {
-                html += '<p class="text-center opacity-60 py-12 text-lg">' + t('noData') + '</p>';
-            }
-            html += '</div>';
-            
-            html += '<div class="glass rounded-2xl p-8 shadow-xl">';
-            html += '<h3 class="text-3xl font-black text-red-600 mb-6 flex items-center gap-3"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>' + t('fallingThisMonth') + '</h3>';
-            if(falling.length > 0) {
-                html += '<div class="space-y-4">';
-                falling.forEach((item, idx) => {
-                    html += '<div class="flex items-center gap-5 p-5 glass rounded-xl cursor-pointer hover:shadow-lg transition-all" onclick="viewItem(\'' + item.id + '\')">';
-                    html += '<div class="text-3xl font-black gradient-text">#' + (idx + 1) + '</div>';
-                    html += '<img src="' + item.imageUrl + '" class="w-20 h-20 rounded-xl object-cover shadow-lg">';
-                    html += '<div class="flex-1"><p class="font-black text-lg mb-1">' + item.name + '</p>' + renderStars(Math.round(item.averageRating), 'small', true) + '</div>';
-                    html += '<span class="text-5xl">📉</span></div>';
-                });
-                html += '</div>';
-            } else {
-                html += '<p class="text-center opacity-60 py-12 text-lg">' + t('noData') + '</p>';
-            }
-            html += '</div>';
-            
-            html += '</div>';
-            
-            document.getElementById('trendsContent').innerHTML = html;
         }
 
         function renderFavorites() {
             const favItems = items.filter(i => favorites.includes(i.id));
             const container = document.getElementById('favoritesList');
             if(favItems.length === 0) {
-                container.innerHTML = '<div class="col-span-full text-center py-20 glass rounded-3xl"><p class="text-3xl font-bold opacity-60">' + t('noFavorites') + '</p><p class="text-lg opacity-40 mt-4">Start adding items to your favorites!</p></div>';
+                container.innerHTML = '<div class="col-span-full text-center py-20 glass rounded-3xl"><p class="text-3xl font-bold opacity-60">' + t('noFavorites') + '</p></div>';
                 return;
             }
             renderItemsGrid(favItems);
@@ -1258,24 +583,21 @@
             const userReviews = reviews.filter(r => r.userId === currentUser.id);
             const totalReviews = userReviews.length;
             const avgRating = totalReviews > 0 ? (userReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1) : '0';
-            
             let html = '<div class="glass rounded-3xl p-10 shadow-2xl">';
             html += '<div class="flex items-center gap-8 mb-10">';
-            html += '<div class="w-32 h-32 gradient-primary rounded-full flex items-center justify-center text-white text-6xl font-black shadow-2xl">' + currentUser.displayName[0].toUpperCase() + '</div>';
-            html += '<div><h2 class="text-5xl font-black gradient-text mb-3">' + currentUser.displayName + '</h2><p class="text-xl opacity-75">' + currentUser.email + '</p></div></div>';
-            
+            html += '<div class="w-32 h-32 grad-primary rounded-full flex items-center justify-center text-white text-6xl font-black">' + currentUser.displayName[0].toUpperCase() + '</div>';
+            html += '<div><h2 class="text-5xl font-black grad-text mb-3">' + currentUser.displayName + '</h2><p class="text-xl opacity-75">' + currentUser.email + '</p></div></div>';
             html += '<div class="grid grid-cols-3 gap-6 mb-10">';
-            html += '<div class="glass rounded-2xl p-8 text-center hover:shadow-xl transition-shadow"><p class="text-5xl font-black gradient-text mb-3">' + totalReviews + '</p><p class="font-bold text-lg">' + t('totalReviews') + '</p></div>';
-            html += '<div class="glass rounded-2xl p-8 text-center hover:shadow-xl transition-shadow"><p class="text-5xl font-black gradient-text mb-3">' + avgRating + '</p><p class="font-bold text-lg">' + t('avgRating') + '</p></div>';
-            html += '<div class="glass rounded-2xl p-8 text-center hover:shadow-xl transition-shadow"><p class="text-5xl font-black gradient-text mb-3">' + favorites.length + '</p><p class="font-bold text-lg">' + t('favorites') + '</p></div>';
+            html += '<div class="glass rounded-2xl p-8 text-center"><p class="text-5xl font-black grad-text mb-3">' + totalReviews + '</p><p class="font-bold text-lg">' + t('totalReviews') + '</p></div>';
+            html += '<div class="glass rounded-2xl p-8 text-center"><p class="text-5xl font-black grad-text mb-3">' + avgRating + '</p><p class="font-bold text-lg">' + t('avgRating') + '</p></div>';
+            html += '<div class="glass rounded-2xl p-8 text-center"><p class="text-5xl font-black grad-text mb-3">' + favorites.length + '</p><p class="font-bold text-lg">' + t('favorites') + '</p></div>';
             html += '</div>';
-            
-            html += '<div class="border-t-2 border-gray-200 pt-8"><h3 class="text-3xl font-black gradient-text mb-8">' + t('reviews') + '</h3>';
+            html += '<div class="border-t-2 pt-8"><h3 class="text-3xl font-black grad-text mb-8">' + t('reviews') + '</h3>';
             if(userReviews.length > 0) {
                 html += '<div class="space-y-5">';
                 userReviews.forEach(review => {
-                    html += '<div class="glass rounded-xl p-6 hover:shadow-lg transition-shadow"><div class="flex items-center justify-between mb-4"><span class="font-black text-xl">' + review.itemName + '</span><div class="flex items-center gap-3">' + renderStars(review.rating, 'small', true) + '<span class="font-black text-lg">' + review.rating + '.0</span></div></div>';
-                    if(review.comment) html += '<p class="text-base mb-3 opacity-90">' + review.comment + '</p>';
+                    html += '<div class="glass rounded-xl p-6"><div class="flex items-center justify-between mb-4"><span class="font-black text-xl">' + review.itemName + '</span><div class="flex items-center gap-3">' + renderStars(review.rating, 'small', true) + '<span class="font-black text-lg">' + review.rating + '.0</span></div></div>';
+                    if(review.comment) html += '<p class="text-base mb-3">' + review.comment + '</p>';
                     html += '<p class="text-xs font-semibold opacity-60">' + new Date(review.createdAt).toLocaleString() + '</p></div>';
                 });
                 html += '</div>';
@@ -1283,28 +605,58 @@
                 html += '<p class="text-center opacity-60 py-12 text-xl">' + t('noReviews') + '</p>';
             }
             html += '</div></div>';
-            
             document.getElementById('profileContent').innerHTML = html;
         }
 
         function renderAdmin() {
             let html = '<div class="space-y-8">';
-            html += '<div class="gradient-warning rounded-3xl p-10 text-white shadow-2xl">';
-            html += '<h2 class="text-5xl font-black mb-3">' + t('adminPanel') + '</h2><p class="text-2xl opacity-90">Manage all content from here</p></div>';
-            
-            html += '<div class="glass rounded-3xl p-10 shadow-xl"><h3 class="text-3xl font-black gradient-text mb-8">Add New Item</h3>';
+            html += '<div class="rounded-3xl p-10 text-white shadow-2xl" style="background: linear-gradient(135deg, #f093fb, #f5576c);"><h2 class="text-5xl font-black mb-3">Admin Panel</h2><p class="text-2xl opacity-90">Manage all content</p></div>';
+            html += '<div class="glass rounded-3xl p-10 shadow-xl"><h3 class="text-3xl font-black grad-text mb-8">Add New Item</h3>';
             html += '<div class="grid grid-cols-2 gap-6">';
-            html += '<input type="text" id="newItemName" placeholder="Name" class="px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow">';
-            html += '<select id="newItemCategory" class="px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow"><option value="">Select Category</option>';
+            html += '<input type="text" id="newItemName" placeholder="Name" class="px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none">';
+            html += '<select id="newItemCategory" class="px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none"><option value="">Category</option>';
             categories.forEach(cat => html += '<option value="' + cat + '">' + cat + '</option>');
             html += '</select>';
-            html += '<input type="text" id="newItemImage" placeholder="Image URL" class="px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow col-span-2">';
-            html += '<textarea id="newItemDesc" placeholder="Description" rows="4" class="px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow col-span-2"></textarea>';
-            html += '<input type="text" id="newItemTags" placeholder="Tags (comma separated)" class="px-5 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 outline-none search-glow col-span-2">';
+            html += '<input type="text" id="newItemImage" placeholder="Image URL" class="px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none col-span-2">';
+            html += '<textarea id="newItemDesc" placeholder="Description" rows="4" class="px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none col-span-2"></textarea>';
+            html += '<input type="text" id="newItemTags" placeholder="Tags (comma separated)" class="px-5 py-4 rounded-xl border-2 focus:border-purple-500 outline-none col-span-2">';
             html += '</div>';
-            html += '<button onclick="addItem()" class="btn gradient-primary text-white px-10 py-4 rounded-xl font-bold shadow-xl mt-6 text-lg">Add Item</button></div>';
-            
-            html += '<div class="glass rounded-3xl p-10 shadow-xl"><h3 class="text-3xl font-black gradient-text mb-8">All Items (' + items.length + ')</h3>';
+            html += '<button onclick="addItem()" class="btn grad-primary text-white px-10 py-4 rounded-xl font-bold text-lg mt-6">Add Item</button></div>';
+            html += '<div class="glass rounded-3xl p-10 shadow-xl"><h3 class="text-3xl font-black grad-text mb-8">All Items (' + items.length + ')</h3>';
             html += '<div class="space-y-4 max-h-96 overflow-y-auto">';
             items.forEach(item => {
-                html += '<div class
+                html += '<div class="flex items-center gap-5 p-5 glass rounded-2xl"><img src="' + item.imageUrl + '" class="w-20 h-20 rounded-xl object-cover">';
+                html += '<div class="flex-1"><p class="font-black text-lg">' + item.name + '</p><p class="text-sm font-semibold opacity-60">' + item.category + '</p></div>';
+                html += '<button onclick="deleteItem(\'' + item.id + '\')" class="btn text-red-500 hover:bg-red-50 px-4 py-2 rounded-xl font-semibold">Delete</button></div>';
+            });
+            html += '</div></div></div>';
+            document.getElementById('adminContent').innerHTML = html;
+        }
+
+        function addItem() {
+            const name = document.getElementById('newItemName').value;
+            const category = document.getElementById('newItemCategory').value;
+            const imageUrl = document.getElementById('newItemImage').value;
+            const description = document.getElementById('newItemDesc').value;
+            const tags = document.getElementById('newItemTags').value.split(',').map(t => t.trim()).filter(t => t);
+            if(!name || !category || !imageUrl || !description) { alert('Fill all fields!'); return; }
+            items.push({id: 'item-' + nextItemId++, name, category, description, imageUrl, tags, averageRating: 0, reviewCount: 0, viewCount: 0, createdAt: new Date().toISOString()});
+            document.getElementById('newItemName').value = '';
+            document.getElementById('newItemImage').value = '';
+            document.getElementById('newItemDesc').value = '';
+            document.getElementById('newItemTags').value = '';
+            alert('Item added!');
+            renderAdmin();
+            renderItems();
+        }
+
+        function deleteItem(itemId) {
+            if(!confirm('Delete this item?')) return;
+            const idx = items.findIndex(i => i.id === itemId);
+            if(idx > -1) items.splice(idx, 1);
+            renderAdmin();
+            renderItems();
+        }
+    </script>
+</body>
+</html>
