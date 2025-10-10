@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oolido - Rate Everything</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .sidebar { transition: transform 0.3s ease; }
+        .star { cursor: pointer; transition: all 0.2s; }
+        .star:hover { transform: scale(1.2); }
+        .category-btn { transition: all 0.3s; }
+        .category-btn:hover { transform: scale(1.05); }
+        .trending-item { transition: all 0.3s; border-left: 4px solid transparent; }
+        .trending-item:hover { border-left-color: #667eea; background: #f3f4f6; }
+        .chart-container { position: relative; height: 300px; }
+        .time-tab { transition: all 0.3s; }
+        .time-tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s ease; }
+        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen gradient-bg flex items-center justify-center p-4">
+        <div class="glass rounded-3xl p-8 max-w-md w-full shadow-2xl">
+            <div class="text-center mb-8">
+                <h1 class="text-6xl font-black text-white mb-2">Oolido</h1>
+                <p class="text-white text-lg">Rate Everything, Everywhere</p>
+            </div>
+            <div class="space-y-4">
+                <button onclick="showAuthModal('login')" class="w-full bg-white text-purple-600 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all transform hover:scale-105">
+                    Login
+                </button>
+                <button onclick="showAuthModal('signup')" class="w-full bg-white/20 text-white py-4 rounded-xl font-semibold hover:bg-white/30 transition-all border border-white/30">
+                    Sign Up
+                </button>
+                <button onclick="handleGoogleLogin()" class="w-full bg-white text-gray-800 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Continue with Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="authTitle" class="text-2xl font-bold">Login</h3>
+                <button onclick="closeAuthModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div id="signupFields" class="hidden mb-4">
+                <input type="text" id="displayName" placeholder="Display Name" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none">
+            </div>
+            <input type="email" id="email" placeholder="Email or Username (use 'admin' for admin)" class="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-purple-500 outline-none">
+            <input type="password" id="password" placeholder="Password (use '321' for admin)" class="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-purple-500 outline-none">
+            <button onclick="handleAuth()" class="w-full gradient-bg text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all mb-3">
+                <span id="authButton">Login</span>
+            </button>
+            <div class="text-center">
+                <button onclick="toggleAuthMode()" class="text-purple-600 hover:text-purple-700 text-sm font-medium">
+                    <span id="authToggle">Don't have an account? Sign up</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleSidebar()" class="lg:hidden text-gray-600 hover:text-purple-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                        </button>
+                        <h1 class="text-3xl font-black gradient-text">Oolido</h1>
+                    </div>
+                    <nav class="flex gap-2">
+                        <button onclick="showPage('home')" class="px-4 py-2 rounded-lg font-medium transition-all text-sm md:text-base hover:bg-gray-100">Home</button>
+                        <button onclick="showPage('profile')" class="px-4 py-2 rounded-lg font-medium transition-all text-sm md:text-base hover:bg-gray-100">Profile</button>
+                        <button id="adminBtn" class="hidden px-4 py-2 rounded-lg font-medium transition-all text-sm md:text-base bg-yellow-100 text-yellow-700 hover:bg-yellow-200" onclick="showPage('admin')">Admin</button>
+                        <button onclick="handleLogout()" class="px-4 py-2 rounded-lg font-medium text-red-600 hover:bg-red-50 transition-all text-sm md:text-base">Logout</button>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex max-w-7xl mx-auto">
+            <!-- Left Sidebar - Categories -->
+            <aside id="leftSidebar" class="sidebar w-64 bg-white shadow-lg p-6 min-h-screen overflow-y-auto scrollbar-hide">
+                <h2 class="text-2xl font-bold mb-4 gradient-text">Categories</h2>
+                <div id="categoriesList" class="space-y-2"></div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-4 md:p-8 min-h-screen">
+                <!-- Home Page -->
+                <div id="homePage" class="fade-in">
+                    <div class="mb-8">
+                        <div class="relative">
+                            <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <input type="text" id="searchInput" placeholder="Search by name, description, or tags..." class="w-full pl-12 pr-4 py-4 bg-white rounded-2xl shadow-lg focus:ring-2 focus:ring-purple-500 outline-none" oninput="filterItems()">
+                        </div>
+                    </div>
+                    <div id="itemsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+
+                <!-- Item Detail Page -->
+                <div id="detailPage" class="hidden fade-in">
+                    <button onclick="backToHome()" class="text-purple-600 hover:text-purple-700 font-medium mb-4 flex items-center gap-2">
+                        ← Back
+                    </button>
+                    <div id="itemDetail" class="bg-white rounded-3xl shadow-xl overflow-hidden"></div>
+                </div>
+
+                <!-- Profile Page -->
+                <div id="profilePage" class="hidden fade-in">
+                    <div class="bg-white rounded-3xl shadow-xl p-8 max-w-4xl mx-auto">
+                        <div class="flex items-center gap-6 mb-8">
+                            <div id="profileAvatar" class="w-24 h-24 gradient-bg rounded-full flex items-center justify-center text-white text-4xl font-bold"></div>
+                            <div>
+                                <h2 id="profileName" class="text-3xl font-bold"></h2>
+                                <p id="profileEmail" class="text-gray-600"></p>
+                                <p id="profileStats" class="text-purple-600 font-medium mt-1"></p>
+                            </div>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-4">Your Reviews</h3>
+                        <div id="userReviews" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <!-- Admin Page -->
+                <div id="adminPage" class="hidden fade-in">
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl shadow-xl p-8 text-white">
+                            <h2 class="text-3xl font-bold flex items-center gap-2">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                Admin Panel
+                            </h2>
+                            <p class="mt-2">Manage all content from here</p>
+                        </div>
+
+                        <!-- Add Item -->
+                        <div class="bg-white rounded-3xl shadow-xl p-8">
+                            <h3 class="text-2xl font-bold mb-6">Add New Item</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input type="text" id="newItemName" placeholder="Name" class="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+                                <select id="newItemCategory" class="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"></select>
+                                <input type="text" id="newItemImage" placeholder="Image URL" class="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none md:col-span-2">
+                                <textarea id="newItemDesc" placeholder="Description" rows="3" class="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none md:col-span-2"></textarea>
+                                <input type="text" id="newItemTags" placeholder="Tags (comma separated)" class="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none md:col-span-2">
+                            </div>
+                            <button onclick="addItem()" class="mt-4 w-full gradient-bg text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all">Add Item</button>
+                        </div>
+
+                        <!-- Manage Categories -->
+                        <div class="bg-white rounded-3xl shadow-xl p-8">
+                            <h3 class="text-2xl font-bold mb-6">Manage Categories</h3>
+                            <div class="flex gap-2 mb-4">
+                                <input type="text" id="newCategoryName" placeholder="New category name" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none">
+                                <button onclick="addCategory()" class="bg-green-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-600 transition-all">Add</button>
+                            </div>
+                            <div id="categoriesAdmin" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2"></div>
+                        </div>
+
+                        <!-- All Items -->
+                        <div class="bg-white rounded-3xl shadow-xl p-8">
+                            <h3 class="text-2xl font-bold mb-4">All Items</h3>
+                            <div id="allItemsList" class="space-y-2"></div>
+                        </div>
+
+                        <!-- All Users -->
+                        <div class="bg-white rounded-3xl shadow-xl p-8">
+                            <h3 class="text-2xl font-bold mb-4">All Users</h3>
+                            <div id="allUsersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Sidebar - Trending -->
+            <aside id="rightSidebar" class="sidebar w-80 bg-gradient-to-b from-purple-50 to-pink-50 shadow-lg p-6 min-h-screen overflow-y-auto scrollbar-hide">
+                <div class="flex items-center gap-2 mb-6">
+                    <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                    <h2 class="text-2xl font-bold gradient-text">Trending Now</h2>
+                </div>
+                <div id="trendingList" class="space-y-3"></div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let currentUser = null;
+        let isAdmin = false;
+        let authMode = 'login';
+        let selectedCategory = 'All';
+        let selectedItem = null;
+        let currentPage = 'home';
+        let ratingChart = null;
+
+        const categories = ['Celebrities', 'Brands', 'Companies', 'Stocks/Funds', 'Sports Clubs', 'Politicians', 'YouTube Channels', 'Movies/TV Shows', 'Music', 'Technology'];
+        
+        const items = [
+            {
+                id: '1', name: 'Tarkan', category: 'Celebrities',
+                description: 'Legendary Turkish pop music icon, globally recognized artist',
+                imageUrl: 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400',
+                tags: ['music', 'pop', 'artist', 'turkish'],
+                averageRating: 0, reviewCount: 0, viewCount: 0,
+                ratingHistory: { daily: [], weekly: [], monthly: [], yearly: [], allTime: [] }
+            },
+            {
+                id: '2', name: 'Apple', category: 'Brands',
+                description: 'Leading technology brand, innovation and design icon',
+                imageUrl: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400',
+                tags: ['technology', 'phone', 'computer', 'innovation'],
+                averageRating: 0, reviewCount: 0, viewCount: 0,
+                ratingHistory: { daily: [], weekly: [], monthly: [], yearly: [], allTime: [] }
+            },
+            {
+                id: '3', name: 'Galatasaray', category: 'Sports Clubs',
+                description: 'One of Turkey\'s most prestigious sports clubs, UEFA Cup champion',
+                imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400',
+                tags: ['football', 'sports', 'turkey', 'yellow-red'],
+                averageRating: 0, reviewCount: 0, viewCount: 0,
+                ratingHistory: { daily: [], weekly: [], monthly: [], yearly: [], allTime: [] }
+            },
+            {
+                id: '4', name: 'Tesla', category: 'Companies',
+                description: 'Revolutionary electric vehicle company, sustainable energy leader',
+                imageUrl: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400',
+                tags: ['electric vehicle', 'technology', 'sustainability', 'autonomous'],
+                averageRating: 0, reviewCount: 0, viewCount: 0,
+                ratingHistory: { daily: [], weekly: [], monthly: [], yearly: [], allTime: [] }
+            },
+            {
+                id: '5', name: 'MrBeast', category: 'YouTube Channels',
+                description: 'One of the world\'s most subscribed YouTube channels',
+                imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400',
+                tags: ['youtube', 'content', 'entertainment', 'philanthropy'],
+                averageRating: 0, reviewCount: 0, viewCount: 0,
+                ratingHistory: { daily: [], weekly: [], monthly: [], yearly: [], allTime: [] }
+            }
+        ];
+
+        const reviews = [];
+        const users = [];
+        let nextItemId = 6;
+        let nextUserId = 1;
+        let nextReviewId = 1;
+
+        // Auth Functions
+        function showAuthModal(mode) {
+            authMode = mode;
+            document.getElementById('authModal').classList.remove('hidden');
+            document.getElementById('authTitle').textContent = mode === 'login' ? 'Login' : 'Sign Up';
+            document.getElementById('authButton').textContent = mode === 'login' ? 'Login' : 'Sign Up';
+            document.getElementById('authToggle').textContent = mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Login';
+            document.getElementById('signupFields').classList.toggle('hidden', mode === 'login');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+
+        function toggleAuthMode() {
+            showAuthModal(authMode === 'login' ? 'signup' : 'login');
+        }
+
+        function handleAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (email === 'admin' && password === '321') {
+                currentUser = { id: 'admin', email: 'admin@oolido.com', displayName: 'Administrator', isAdmin: true };
+                isAdmin = true;
+                document.getElementById('adminBtn').classList.remove('hidden');
+                closeAuthModal();
+                showMainApp();
+                showPage('admin');
+                return;
+            }
+
+            if (authMode === 'login') {
+                const user = users.find(u => u.email === email && u.password === password);
+                if (user) {
+                    currentUser = user;
+                    closeAuthModal();
+                    showMainApp();
+                } else {
+                    alert('Invalid email or password!');
+                }
+            } else {
+                const displayName = document.getElementById('displayName').value;
+                if (!displayName || !email || !password) {
+                    alert('Please fill all fields!');
+                    return;
+                }
+                const newUser = { id: `user-${nextUserId++}`, email, password, displayName, createdAt: new Date().toISOString() };
+                users.push(newUser);
+                currentUser = newUser;
+                closeAuthModal();
+                showMainApp();
+            }
+        }
+
+        function handleGoogleLogin() {
+            const googleUser = { id: `google-${nextUserId++}`, email: `user${nextUserId}@gmail.com`, displayName: `Google User ${nextUserId}`, createdAt: new Date().toISOString() };
+            users.push(googleUser);
+            currentUser = googleUser;
+            showMainApp();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            isAdmin = false;
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('adminBtn').classList.add('hidden');
+        }
+
+        function showMainApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            renderCategories();
+            renderItems();
+            renderTrending();
+        }
+
+        // Page Navigation
+        function showPage(page) {
+            currentPage = page;
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('detailPage').classList.add('hidden');
+            document.getElementById('profilePage').classList.add('hidden');
+            document.getElementById('adminPage').classList.add('hidden');
+
+            if (page === 'home') {
+                document.getElementById('homePage').classList.remove('hidden');
+                renderItems();
+            } else if (page === 'profile') {
+                document.getElementById('profilePage').classList.remove('hidden');
+                renderProfile();
+            } else if (page === 'admin' && isAdmin) {
+                document.getElementById('adminPage').classList.remove('hidden');
+                renderAdmin();
+            }
+        }
+
+        function backToHome() {
+            selectedItem = null;
+            showPage('home');
+        }
+
+        // Render Functions
+        function renderCategories() {
+            const container = document.getElementById('categoriesList');
+            container.innerHTML = `
+                <button onclick="filterByCategory('All')" class="category-btn w-full text-left px-4 py-3 rounded-lg font-medium ${selectedCategory === 'All' ? 'gradient-bg text-white' : 'text-gray-700 hover:bg-gray-100'}">
+                    All Categories
+                </button>
+            ` + categories.map(cat => `
+                <button onclick="filterByCategory('${cat}')" class="category-btn w-full text-left px-4 py-3 rounded-lg font-medium ${selectedCategory === cat ? 'gradient-bg text-white' : 'text-gray-700 hover:bg-gray-100'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function filterByCategory(category) {
+            selectedCategory = category;
+            renderCategories();
+            filterItems();
+        }
+
+        function renderItems() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = items.filter(item => {
+                const matchesSearch = item.name.toLowerCase().includes(searchTerm) || 
+                                     item.description.toLowerCase().includes(searchTerm) || 
+                                     item.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+                const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+                return matchesSearch && matchesCategory;
+            });
+
+            const container = document.getElementById('itemsGrid');
+            container.innerHTML = filtered.map(item => `
+                <div class="card-hover bg-white rounded-2xl overflow-hidden shadow-lg cursor-pointer" onclick="viewItem('${item.id}')">
+                    <div class="relative h-48 overflow-hidden">
+                        <img src="${item.imageUrl}" alt="${item.name}" class="w-full h-full object-cover">
+                        <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-purple-600">
+                            ${item.category}
+                        </div>
+                        <div class="absolute top-3 left-3 bg-black/70 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-white flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            ${item.viewCount}
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${item.name}</h3>
+                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">${item.description}</p>
+                        <div class="flex items-center justify-between mb-3">
+                            ${renderStars(Math.round(item.averageRating), true)}
+                            <span class="text-sm text-gray-500">${item.reviewCount} reviews</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            ${item.tags.slice(0, 3).map(tag => `<span class="text-xs px-2 py-1 bg-purple-100 text-purple-600 rounded-full">#${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterItems() {
+            renderItems();
+        }
+
+        function renderTrending() {
+            const trending = [...items].sort((a, b) => b.reviewCount - a.reviewCount).slice(0, 10);
+            const container = document.getElementById('trendingList');
+            container.innerHTML = trending.map((item, index) => `
+                <div class="trending-item p-4 rounded-xl cursor-pointer bg-white/50" onclick="viewItem('${item.id}')">
+                    <div class="flex items-center gap-3">
+                        <div class="flex-shrink-0 w-10 h-10 gradient-bg rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            ${index + 1}
+                        </div>
+                        <div class="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden">
+                            <img src="${item.imageUrl}" alt="${item.name}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold text-sm truncate">${item.name}</p>
+                            <div class="flex items-center gap-1 text-xs">
+                                ${renderStars(Math.round(item.averageRating), true, 'small')}
+                                <span class="text-gray-500">(${item.reviewCount})</span>
+                            </div>
+                            <p class="text-xs text-gray-500">${item.viewCount} views</p>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function viewItem(itemId) {
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+            
+            item.viewCount++;
+            selectedItem = item;
+            
+            document.getElementById('homePage').classList.add('hidden');
+            document.getElementById('detailPage').classList.remove('hidden');
+            
+            const itemReviews = reviews.filter(r => r.itemId === itemId);
+            
+            document.getElementById('itemDetail').innerHTML = `
+                <div class="relative h-96">
+                    <img src="${item.imageUrl}" alt="${item.name}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div class="absolute bottom-8 left-8 text-white max-w-2xl">
+                        <span class="glass px-4 py-2 rounded-full text-sm mb-3 inline-block">${item.category}</span>
+                        <h1 class="text-5xl font-black mb-2">${item.name}</h1>
+                        <div class="flex items-center gap-4">
+                            ${renderStars(Math.round(item.averageRating), true)}
+                            <span class="text-lg">${item.reviewCount} reviews</span>
+                            <span class="text-sm opacity-80">• ${item.viewCount} views</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-8">
+                    <p class="text-gray-700 text-lg mb-6">${item.description}</p>
+                    <div class="flex flex-wrap gap-2 mb-8">
+                        ${item.tags.map(tag => `<span class="px-4 py-2 bg-purple-100 text-purple-600 rounded-full font-medium">#${tag}</span>`).join('')}
+                    </div>
+
+                    <!-- Rating Chart -->
+                    <div class="border-t pt-6 mb-6">
+                        <h3 class="text-2xl font-bold mb-4">Rating History</h3>
+                        <div class="flex gap-2 mb-4">
+                            <button onclick="showRatingChart('${itemId}', 'daily')" class="time-tab px-4 py-2 rounded-lg font-medium active">Daily</button>
+                            <button onclick="showRatingChart('${itemId}', 'weekly')" class="time-tab px-4 py-2 rounded-lg font-medium">Weekly</button>
+                            <button onclick="showRatingChart('${itemId}', 'monthly')" class="time-tab px-4 py-2 rounded-lg font-medium">Monthly</button>
+                            <button onclick="showRatingChart('${itemId}', 'yearly')" class="time-tab px-4 py-2 rounded-lg font-medium">Yearly</button>
+                            <button onclick="showRatingChart('${itemId}', 'allTime')" class="time-tab px-4 py-2 rounded-lg font-medium">All Time</button>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="ratingChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Review Form -->
+                    <div class="border-t pt-6 mb-6">
+                        <h3 class="text-2xl font-bold mb-4">Submit Your Review</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Your Rating</label>
+                                <div id="newRatingStars">${renderStars(0, false)}</div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Your Comment</label>
+                                <textarea id="newComment" placeholder="Share your thoughts..." rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"></textarea>
+                            </div>
+                            <button onclick="submitReview('${itemId}')" class="gradient-bg text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+                                Submit Review
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Reviews List -->
+                    <div class="border-t pt-6">
+                        <h3 class="text-2xl font-bold mb-4">Reviews (${itemReviews.length})</h3>
+                        <div class="space-y-4">
+                            ${itemReviews.map(review => `
+                                <div class="bg-gray-50 rounded-xl p-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="font-semibold">${review.userName}</span>
+                                        ${renderStars(review.rating, true)}
+                                    </div>
+                                    ${review.comment ? `<p class="text-gray-700">${review.comment}</p>` : ''}
+                                    <p class="text-xs text-gray-500 mt-2">${new Date(review.createdAt).toLocaleDateString()}</p>
+                                </div>
+                            `).join('') || '<p class="text-gray-500 text-center py-8">No reviews yet. Be the first!</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            showRatingChart(itemId, 'daily');
+        }
+
+        function showRatingChart(itemId, period) {
+            const item = items.find(i => i.id === itemId);
+            if (!item) return;
+
+            document.querySelectorAll('.time-tab').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const ctx = document.getElementById('ratingChart').getContext('2d');
+            
+            if (ratingChart) {
+                ratingChart.destroy();
+            }
+
+            const history = item.ratingHistory[period] || [];
+            const labels = history.map((_, i) => {
+                if (period === 'daily') return `Day ${i + 1}`;
+                if (period === 'weekly') return `Week ${i + 1}`;
+                if (period === 'monthly') return `Month ${i + 1}`;
+                if (period === 'yearly') return `Year ${i + 1}`;
+                return `Point ${i + 1}`;
+            });
+            const data = history.map(h => h.rating);
+
+            ratingChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length ? labels : ['No data yet'],
+                    datasets: [{
+                        label: 'Average Rating',
+                        data: data.length ? data : [0],
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: { stepSize: 1 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
+        }
+
+        let newRating = 0;
+
+        function renderStars(rating, readonly = false, size = 'normal') {
+            const sizeClass = size === 'small' ? 'w-3 h-3' : 'w-5 h-5';
+            return `<div class="flex gap-1">${[1,2,3,4,5].map(i => `
+                <svg class="star ${sizeClass} ${readonly ? '' : 'cursor-pointer'}" fill="${i <= rating ? '#fbbf24' : 'none'}" stroke="${i <= rating ? '#fbbf24' : '#9ca3af'}" viewBox="0 0 24 24" ${readonly ? '' : `onclick="setRating(${i})"`}>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                </svg>
+            `).join('')}</div>`;
+        }
+
+        function setRating(rating) {
+            newRating = rating;
+            document.getElementById('newRatingStars').innerHTML = renderStars(rating, false);
+        }
+
+        function submitReview(itemId) {
+            if (newRating === 0) {
+                alert('Please give a rating!');
+                return;
+            }
+
+            const comment = document.getElementById('newComment').value;
+            const review = {
+                id: `review-${nextReviewId++}`,
+                itemId,
+                itemName: selectedItem.name,
+                userId: currentUser.id,
+                userName: currentUser.displayName,
+                rating: newRating,
+                comment,
+                createdAt: new Date().toISOString()
+            };
+
+            reviews.push(review);
+
+            const item = items.find(i => i.id === itemId);
+            const newReviewCount = item.reviewCount + 1;
+            const newAverageRating = ((item.averageRating * item.reviewCount) + newRating) / newReviewCount;
+            item.reviewCount = newReviewCount;
+            item.averageRating = newAverageRating;
+
+            // Add to rating history
+            item.ratingHistory.daily.push({ date: new Date().toISOString(), rating: newAverageRating });
+            item.ratingHistory.allTime.push({ date: new Date().toISOString(), rating: newAverageRating });
+
+            newRating = 0;
+            alert('Review submitted successfully!');
+            viewItem(itemId);
+            renderItems();
+            renderTrending();
+        }
+
+        function renderProfile() {
+            document.getElementById('profileAvatar').textContent = currentUser.displayName[0].toUpperCase();
+            document.getElementById('profileName').textContent = currentUser.displayName;
+            document.getElementById('profileEmail').textContent = currentUser.email;
+            
+            const userReviews = reviews.filter(r => r.userId === currentUser.id);
+            document.getElementById('profileStats').textContent = `${userReviews.length} reviews submitted`;
+            
+            document.getElementById('userReviews').innerHTML = userReviews.map(review => `
+                <div class="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-semibold text-lg">${review.itemName}</span>
+                        ${renderStars(review.rating, true)}
+                    </div>
+                    ${review.comment ? `<p class="text-gray-700 mb-2">${review.comment}</p>` : ''}
+                    <p class="text-xs text-gray-500">${new Date(review.createdAt).toLocaleDateString()}</p>
+                </div>
+            `).join('') || '<p class="text-gray-500 text-center py-8">You haven\'t submitted any reviews yet.</p>';
+        }
+
+        function renderAdmin() {
+            const categorySelect = document.getElementById('newItemCategory');
+            categorySelect.innerHTML = `<option value="">Select Category</option>` + categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+            document.getElementById('categoriesAdmin').innerHTML = categories.map(cat => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span class="font-medium text-sm">${cat}</span>
+                    <button onclick="deleteCategory('${cat}')" class="text-red-500 hover:text-red-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+
+            document.getElementById('allItemsList').innerHTML = items.map(item => `
+                <div class="flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:bg-gray-50">
+                    <img src="${item.imageUrl}" alt="${item.name}" class="w-16 h-16 object-cover rounded-lg">
+                    <div class="flex-1">
+                        <p class="font-semibold">${item.name}</p>
+                        <p class="text-sm text-gray-600">${item.category}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        ${renderStars(Math.round(item.averageRating), true)}
+                        <span class="text-sm text-gray-600">(${item.reviewCount})</span>
+                        <button onclick="deleteItem('${item.id}')" class="text-red-500 hover:text-red-700 p-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('allUsersList').innerHTML = users.map(u => `
+                <div class="p-4 border border-gray-200 rounded-xl">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 gradient-bg rounded-full flex items-center justify-center text-white font-bold">${u.displayName[0].toUpperCase()}</div>
+                        <div>
+                            <p class="font-semibold">${u.displayName}</p>
+                            <p class="text-sm text-gray-600">${u.email}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-gray-500 text-center py-8 col-span-full">No registered users yet.</p>';
+        }
+
+        function addItem() {
+            const name = document.getElementById('newItemName').value;
+            const category = document.getElementById('newItemCategory').value;
+            const imageUrl = document.getElementById('newItemImage').value;
+            const description = document.getElementById('newItemDesc').value;
+            const tags = document.getElementById('newItemTags').value.split(',').map(t => t.trim()).filter(t => t);
+
+            if (!name || !category || !imageUrl || !description) {
+                alert('Please fill all fields!');
+                return;
+            }
+
+            items.push({
+                id: `item-${nextItemId++}`,
+                name, category, description, imageUrl, tags,
+                averageRating: 0, reviewCount: 0, viewCount: 0,
+                ratingHistory: { daily: [], weekly: [], monthly: [], yearly: [], allTime: [] },
+                createdAt: new Date().toISOString()
+            });
+
+            document.getElementById('newItemName').value = '';
+            document.getElementById('newItemImage').value = '';
+            document.getElementById('newItemDesc').value = '';
+            document.getElementById('newItemTags').value = '';
+            
+            alert('Item added successfully!');
+            renderAdmin();
+            renderItems();
+        }
+
+        function deleteItem(itemId) {
+            if (!confirm('Are you sure you want to delete this item?')) return;
+            const index = items.findIndex(i => i.id === itemId);
+            if (index > -1) items.splice(index, 1);
+            renderAdmin();
+            renderItems();
+            renderTrending();
+        }
+
+        function addCategory() {
+            const name = document.getElementById('newCategoryName').value.trim();
+            if (!name) return;
+            if (categories.includes(name)) {
+                alert('Category already exists!');
+                return;
+            }
+            categories.push(name);
+            document.getElementById('newCategoryName').value = '';
+            alert('Category added successfully!');
+            renderCategories();
+            renderAdmin();
+        }
+
+        function deleteCategory(name) {
+            if (!confirm('Are you sure you want to delete this category?')) return;
+            const index = categories.indexOf(name);
+            if (index > -1) categories.splice(index, 1);
+            renderCategories();
+            renderAdmin();
+        }
+
+        function toggleSidebar() {
+            document.getElementById('leftSidebar').classList.toggle('-translate-x-full');
+        }
+    </script>
+</body>
+</html>
