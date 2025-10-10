@@ -8,204 +8,67 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
-        
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Poppins', sans-serif; overflow-x: hidden; }
-        
+        body { font-family: 'Poppins', sans-serif; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
+        body.dark-mode { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #e0e0e0; }
+        body.light-mode { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); color: #212529; }
         .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); }
         .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        
         .glass { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.18); }
         .glass-white { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.5); }
-        
-        .card-3d { 
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transform-style: preserve-3d;
-        }
-        .card-3d:hover { 
-            transform: translateY(-15px) rotateX(5deg);
-            box-shadow: 0 30px 60px rgba(102, 126, 234, 0.4);
-        }
-        
+        body.dark-mode .glass-white { background: rgba(30, 30, 50, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .card-3d { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
+        .card-3d:hover { transform: translateY(-15px) rotateX(5deg); box-shadow: 0 30px 60px rgba(102, 126, 234, 0.4); }
         .floating { animation: floating 3s ease-in-out infinite; }
-        @keyframes floating {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-        
-        .glow { box-shadow: 0 0 30px rgba(102, 126, 234, 0.6); }
-        .glow-pink { box-shadow: 0 0 30px rgba(240, 147, 251, 0.6); }
-        
+        @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
         .star { cursor: pointer; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
         .star:hover { transform: scale(1.4) rotate(15deg); filter: drop-shadow(0 0 10px #fbbf24); }
-        
-        .btn-glow { 
-            position: relative; 
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-        .btn-glow::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.5s;
-        }
+        .btn-glow { position: relative; overflow: hidden; transition: all 0.3s; }
+        .btn-glow::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.5s; }
         .btn-glow:hover::before { left: 100%; }
         .btn-glow:hover { transform: scale(1.05); box-shadow: 0 10px 40px rgba(102, 126, 234, 0.5); }
-        
-        .category-btn { 
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            position: relative;
-        }
+        .category-btn { transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); position: relative; }
         .category-btn:hover { transform: translateX(10px) scale(1.05); }
         .category-btn.active { transform: scale(1.1); }
-        .category-btn.active::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 60%;
-            background: linear-gradient(180deg, #667eea, #764ba2);
-            border-radius: 0 4px 4px 0;
-        }
-        
-        .trending-item {
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-        .trending-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 0;
-            background: linear-gradient(90deg, rgba(102, 126, 234, 0.1), transparent);
-            transition: width 0.3s;
-        }
-        .trending-item:hover::before { width: 100%; }
-        .trending-item:hover { transform: translateX(5px); background: rgba(102, 126, 234, 0.05); }
-        
-        .time-tab { 
-            transition: all 0.3s;
-            position: relative;
-        }
-        .time-tab::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.3s;
-        }
-        .time-tab.active::after { width: 100%; }
+        .trending-item { transition: all 0.3s; position: relative; overflow: hidden; }
+        .trending-item:hover { transform: translateX(5px); }
+        body.dark-mode .trending-item:hover { background: rgba(102, 126, 234, 0.1); }
+        body.light-mode .trending-item:hover { background: rgba(102, 126, 234, 0.05); }
+        .time-tab { transition: all 0.3s; position: relative; }
         .time-tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; transform: scale(1.1); }
-        
-        .lang-btn {
-            transition: all 0.3s;
-            position: relative;
-        }
+        .lang-btn { transition: all 0.3s; }
         .lang-btn:hover { transform: scale(1.2) rotate(5deg); }
-        .lang-btn.active { 
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .lang-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: fadeInUp 0.6s ease-out; }
-        
-        @keyframes slideInLeft {
-            from { opacity: 0; transform: translateX(-50px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        .slide-in-left { animation: slideInLeft 0.5s ease-out; }
-        
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(50px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        .slide-in-right { animation: slideInRight 0.5s ease-out; }
-        
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        
-        .badge { 
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(240, 147, 251, 0.1));
-            border: 2px solid rgba(102, 126, 234, 0.3);
-            transition: all 0.3s;
-        }
+        .badge { position: relative; display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.875rem; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(240, 147, 251, 0.1)); border: 2px solid rgba(102, 126, 234, 0.3); transition: all 0.3s; }
         .badge:hover { transform: scale(1.1); border-color: #667eea; }
-        
-        .avatar { 
-            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
-            animation: gradientShift 3s ease infinite;
-        }
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-        
-        .similar-items-container {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(240, 147, 251, 0.05));
-            border-radius: 30px;
-            padding: 2rem;
-            margin-top: 2rem;
-        }
-        
-        .review-badge {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        
-        .voted-badge {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+        .reaction-btn { transition: all 0.3s; cursor: pointer; padding: 0.5rem 1rem; border-radius: 50px; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; }
+        .reaction-btn:hover { transform: scale(1.2); }
+        .reaction-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .notification-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; position: absolute; top: -2px; right: -2px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .dark-mode-toggle { cursor: pointer; width: 60px; height: 30px; background: #e2e8f0; border-radius: 50px; position: relative; transition: all 0.3s; }
+        .dark-mode-toggle.active { background: #1e293b; }
+        .dark-mode-toggle-circle { width: 24px; height: 24px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .dark-mode-toggle.active .dark-mode-toggle-circle { left: 33px; }
+        .versus-card { transition: all 0.3s; }
+        .versus-card:hover { transform: scale(1.05); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .sort-btn { transition: all 0.3s; padding: 0.5rem 1rem; border-radius: 50px; font-weight: 600; font-size: 0.875rem; }
+        .sort-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .sort-btn:hover { transform: scale(1.05); }
     </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen">
+<body class="light-mode">
     <!-- Login Screen -->
     <div id="loginScreen" class="min-h-screen gradient-bg flex items-center justify-center p-4 relative overflow-hidden">
         <div class="absolute inset-0 opacity-20">
             <div class="absolute w-96 h-96 bg-white rounded-full blur-3xl top-10 left-10 floating"></div>
             <div class="absolute w-96 h-96 bg-pink-300 rounded-full blur-3xl bottom-10 right-10 floating" style="animation-delay: 1s;"></div>
         </div>
-        
         <div class="glass rounded-3xl p-10 max-w-md w-full shadow-2xl relative z-10">
             <div class="flex justify-end mb-4">
                 <div class="flex gap-2">
@@ -216,22 +79,15 @@
                     <button onclick="changeLanguage('es')" class="lang-btn px-3 py-1.5 rounded-lg text-white text-sm font-semibold">ES</button>
                 </div>
             </div>
-            
             <div class="text-center mb-10">
                 <h1 class="text-7xl font-black text-white mb-3 tracking-tight">Oolido</h1>
                 <p class="text-white text-xl font-light" id="loginSubtitle">Rate Everything, Everywhere</p>
             </div>
-            
             <div class="space-y-4">
                 <button onclick="showAuthModal('login')" class="btn-glow w-full bg-white text-purple-600 py-4 rounded-2xl font-bold hover:bg-gray-50 transition-all" id="loginBtn">Login</button>
                 <button onclick="showAuthModal('signup')" class="btn-glow w-full glass text-white py-4 rounded-2xl font-bold border-2 border-white/30" id="signupBtn">Sign Up</button>
                 <button onclick="handleGoogleLogin()" class="btn-glow w-full bg-white/90 text-gray-800 py-4 rounded-2xl font-bold hover:bg-white transition-all flex items-center justify-center gap-2">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                    </svg>
+                    <svg class="w-6 h-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                     <span id="googleBtn">Continue with Google</span>
                 </button>
             </div>
@@ -250,15 +106,17 @@
             </div>
             <input type="email" id="email" placeholder="Email or Username" class="w-full px-5 py-4 border-2 border-purple-200 rounded-2xl mb-4 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
             <input type="password" id="password" placeholder="Password" class="w-full px-5 py-4 border-2 border-purple-200 rounded-2xl mb-6 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all">
-            <button onclick="handleAuth()" class="btn-glow w-full gradient-bg text-white py-4 rounded-2xl font-bold shadow-lg mb-4">
-                <span id="authButton">Login</span>
-            </button>
+            <button onclick="handleAuth()" class="btn-glow w-full gradient-bg text-white py-4 rounded-2xl font-bold shadow-lg mb-4"><span id="authButton">Login</span></button>
             <div class="text-center">
-                <button onclick="toggleAuthMode()" class="text-purple-600 hover:text-purple-700 text-sm font-semibold">
-                    <span id="authToggle">Don't have an account? Sign up</span>
-                </button>
+                <button onclick="toggleAuthMode()" class="text-purple-600 hover:text-purple-700 text-sm font-semibold"><span id="authToggle">Don't have an account? Sign up</span></button>
             </div>
         </div>
+    </div>
+
+    <!-- Notifications Panel -->
+    <div id="notificationPanel" class="hidden fixed top-20 right-4 w-96 glass-white rounded-2xl shadow-2xl p-6 z-40 max-h-96 overflow-y-auto scrollbar-hide">
+        <h3 class="text-xl font-bold gradient-text mb-4">Notifications</h3>
+        <div id="notificationsList"></div>
     </div>
 
     <!-- Main App -->
@@ -269,14 +127,14 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-6">
                         <button onclick="toggleSidebar()" class="lg:hidden text-purple-600 hover:text-purple-700">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                            </svg>
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                         </button>
-                        <h1 class="text-4xl font-black gradient-text tracking-tight">Oolido</h1>
+                        <h1 class="text-4xl font-black gradient-text tracking-tight cursor-pointer" onclick="showPage('home')">Oolido</h1>
                     </div>
-                    
-                    <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="dark-mode-toggle" onclick="toggleDarkMode()" id="darkModeToggle">
+                            <div class="dark-mode-toggle-circle"></div>
+                        </div>
                         <div class="flex gap-2">
                             <button onclick="changeLanguage('tr')" class="lang-btn px-3 py-1.5 rounded-lg text-sm font-semibold">TR</button>
                             <button onclick="changeLanguage('en')" class="lang-btn px-3 py-1.5 rounded-lg text-sm font-semibold active">EN</button>
@@ -284,9 +142,16 @@
                             <button onclick="changeLanguage('fr')" class="lang-btn px-3 py-1.5 rounded-lg text-sm font-semibold">FR</button>
                             <button onclick="changeLanguage('es')" class="lang-btn px-3 py-1.5 rounded-lg text-sm font-semibold">ES</button>
                         </div>
-                        
+                        <button onclick="toggleNotifications()" class="relative btn-glow px-4 py-2 rounded-xl font-semibold">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                            <span id="notificationDot" class="notification-dot hidden"></span>
+                        </button>
                         <nav class="flex gap-3">
                             <button onclick="showPage('home')" class="btn-glow px-5 py-2.5 rounded-xl font-semibold transition-all" id="homeNav">Home</button>
+                            <button onclick="showPage('versus')" class="btn-glow px-5 py-2.5 rounded-xl font-semibold transition-all" id="versusNav">VS</button>
+                            <button onclick="showPage('hotTakes')" class="btn-glow px-5 py-2.5 rounded-xl font-semibold transition-all" id="hotTakesNav">🔥 Hot</button>
+                            <button onclick="showPage('trends')" class="btn-glow px-5 py-2.5 rounded-xl font-semibold transition-all" id="trendsNav">📈 Trends</button>
+                            <button onclick="showPage('favorites')" class="btn-glow px-5 py-2.5 rounded-xl font-semibold transition-all" id="favoritesNav">⭐</button>
                             <button onclick="showPage('profile')" class="btn-glow px-5 py-2.5 rounded-xl font-semibold transition-all" id="profileNav">Profile</button>
                             <button id="adminBtn" class="hidden btn-glow px-5 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white" onclick="showPage('admin')">Admin</button>
                             <button onclick="handleLogout()" class="btn-glow px-5 py-2.5 rounded-xl font-semibold text-red-600 hover:bg-red-50 transition-all" id="logoutNav">Logout</button>
@@ -298,7 +163,7 @@
 
         <div class="flex">
             <!-- Left Sidebar -->
-            <aside id="leftSidebar" class="slide-in-left w-80 glass-white shadow-2xl p-8 min-h-screen overflow-y-auto scrollbar-hide">
+            <aside id="leftSidebar" class="w-80 glass-white shadow-2xl p-8 min-h-screen overflow-y-auto scrollbar-hide">
                 <div class="mb-8">
                     <h2 class="text-3xl font-black gradient-text mb-2" id="categoriesTitle">Categories</h2>
                     <div class="w-20 h-1 gradient-bg rounded-full"></div>
@@ -310,39 +175,116 @@
             <main class="flex-1 p-8 min-h-screen">
                 <!-- Home Page -->
                 <div id="homePage" class="fade-in">
-                    <div class="mb-10">
-                        <div class="relative max-w-3xl">
-                            <svg class="absolute left-6 top-1/2 transform -translate-y-1/2 text-purple-400 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
+                    <div class="mb-6 flex items-center gap-4">
+                        <div class="relative flex-1 max-w-3xl">
+                            <svg class="absolute left-6 top-1/2 transform -translate-y-1/2 text-purple-400 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                             <input type="text" id="searchInput" placeholder="Search..." class="w-full pl-16 pr-6 py-5 glass-white rounded-3xl shadow-xl focus:ring-4 focus:ring-purple-300 outline-none text-lg font-medium transition-all" oninput="filterItems()">
                         </div>
+                        <button onclick="randomItem()" class="btn-glow px-6 py-5 rounded-3xl font-bold glass-white flex items-center gap-2">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            <span id="randomBtn">Random</span>
+                        </button>
+                    </div>
+                    <div class="mb-6 flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2">
+                        <span class="font-bold text-sm">Sort:</span>
+                        <button onclick="setSorting('rating')" class="sort-btn" id="sortRating">Highest Rated</button>
+                        <button onclick="setSorting('newest')" class="sort-btn" id="sortNewest">Newest</button>
+                        <button onclick="setSorting('mostReviewed')" class="sort-btn active" id="sortMostReviewed">Most Reviewed</button>
+                        <button onclick="setSorting('trending')" class="sort-btn" id="sortTrending">Trending</button>
+                        <button onclick="setSorting('views')" class="sort-btn" id="sortViews">Most Viewed</button>
                     </div>
                     <div id="itemsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8"></div>
                 </div>
 
+                <!-- Versus Page -->
+                <div id="versusPage" class="hidden fade-in">
+                    <h2 class="text-4xl font-black gradient-text mb-8">⚔️ Versus Mode</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div class="glass-white rounded-3xl p-8 shadow-xl">
+                            <h3 class="text-2xl font-bold mb-4">Select Item 1</h3>
+                            <select id="versus1" class="w-full px-5 py-4 border-2 border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none" onchange="updateVersus()"></select>
+                        </div>
+                        <div class="glass-white rounded-3xl p-8 shadow-xl">
+                            <h3 class="text-2xl font-bold mb-4">Select Item 2</h3>
+                            <select id="versus2" class="w-full px-5 py-4 border-2 border-purple-200 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none" onchange="updateVersus()"></select>
+                        </div>
+                    </div>
+                    <div id="versusComparison"></div>
+                </div>
+
+                <!-- Hot Takes Page -->
+                <div id="hotTakesPage" class="hidden fade-in">
+                    <h2 class="text-4xl font-black gradient-text mb-8">🔥 Hot Takes (Last 24h)</h2>
+                    <div id="hotTakesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+
+                <!-- Trends Page -->
+                <div id="trendsPage" class="hidden fade-in">
+                    <h2 class="text-4xl font-black gradient-text mb-8">📈 Trend Analysis</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div class="glass-white rounded-3xl p-8 shadow-xl">
+                            <h3 class="text-2xl font-bold mb-4 text-green-600">📈 Rising This Month</h3>
+                            <div id="risingTrends"></div>
+                        </div>
+                        <div class="glass-white rounded-3xl p-8 shadow-xl">
+                            <h3 class="text-2xl font-bold mb-4 text-red-600">📉 Falling This Month</h3>
+                            <div id="fallingTrends"></div>
+                        </div>
+                    </div>
+                    <div class="glass-white rounded-3xl p-8 shadow-xl">
+                        <h3 class="text-2xl font-bold mb-4">Category Trends</h3>
+                        <div class="h-96"><canvas id="categoryTrendChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Favorites Page -->
+                <div id="favoritesPage" class="hidden fade-in">
+                    <h2 class="text-4xl font-black gradient-text mb-8">⭐ My Favorites</h2>
+                    <div id="favoritesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+                </div>
+
                 <!-- Detail Page -->
                 <div id="detailPage" class="hidden fade-in">
-                    <button onclick="backToHome()" class="btn-glow text-purple-600 hover:text-purple-700 font-bold mb-6 flex items-center gap-2 px-6 py-3 rounded-2xl glass-white" id="backBtn">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                        </svg>
+                    <button onclick="backToHome()" class="btn-glow gradient-text font-bold mb-6 flex items-center gap-2 px-6 py-3 rounded-2xl glass-white" id="backBtn">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         Back
                     </button>
                     <div id="itemDetail"></div>
-                    <div id="similarItems" class="similar-items-container"></div>
+                    <div id="similarItems" class="mt-8"></div>
                 </div>
 
                 <!-- Profile Page -->
                 <div id="profilePage" class="hidden fade-in">
-                    <div class="glass-white rounded-3xl shadow-2xl p-10 max-w-5xl mx-auto">
+                    <div class="glass-white rounded-3xl shadow-2xl p-10 max-w-6xl mx-auto">
                         <div class="flex items-center gap-8 mb-10">
-                            <div id="profileAvatar" class="avatar w-32 h-32 rounded-full flex items-center justify-center text-white text-5xl font-black shadow-2xl"></div>
+                            <div id="profileAvatar" class="w-32 h-32 gradient-bg rounded-full flex items-center justify-center text-white text-5xl font-black shadow-2xl"></div>
                             <div>
                                 <h2 id="profileName" class="text-4xl font-black gradient-text mb-2"></h2>
-                                <p id="profileEmail" class="text-gray-600 text-lg mb-2"></p>
-                                <p id="profileStats" class="text-purple-600 font-bold text-lg"></p>
+                                <p id="profileEmail" class="text-lg mb-2"></p>
+                                <p id="profileStats" class="font-bold text-lg"></p>
                             </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                            <div class="glass-white rounded-2xl p-6 shadow-lg">
+                                <h4 class="text-sm font-semibold mb-2">Total Reviews</h4>
+                                <p id="totalReviews" class="text-4xl font-black gradient-text"></p>
+                            </div>
+                            <div class="glass-white rounded-2xl p-6 shadow-lg">
+                                <h4 class="text-sm font-semibold mb-2">Average Rating</h4>
+                                <p id="avgRating" class="text-4xl font-black gradient-text"></p>
+                            </div>
+                            <div class="glass-white rounded-2xl p-6 shadow-lg">
+                                <h4 class="text-sm font-semibold mb-2">Most Active Category</h4>
+                                <p id="mostActiveCategory" class="text-2xl font-black gradient-text"></p>
+                            </div>
+                        </div>
+                        <div class="glass-white rounded-2xl p-8 shadow-lg mb-10">
+                            <h3 class="text-2xl font-bold mb-4">Monthly Activity</h3>
+                            <div class="h-64"><canvas id="activityChart"></canvas></div>
+                        </div>
+                        <div class="glass-white rounded-2xl p-8 shadow-lg mb-10">
+                            <h3 class="text-2xl font-bold mb-4">Activity by Day & Hour</h3>
+                            <div id="activityHeatmap"></div>
                         </div>
                         <div class="border-t-2 border-purple-100 pt-8">
                             <h3 class="text-3xl font-black gradient-text mb-6" id="yourReviewsTitle">Your Reviews</h3>
@@ -358,7 +300,6 @@
                             <h2 class="text-4xl font-black mb-2" id="adminPanelTitle">Admin Panel</h2>
                             <p class="text-xl font-light" id="adminPanelSubtitle">Manage all content from here</p>
                         </div>
-
                         <div class="glass-white rounded-3xl shadow-2xl p-10">
                             <h3 class="text-3xl font-black gradient-text mb-8" id="addItemTitle">Add New Item</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -370,7 +311,6 @@
                             </div>
                             <button onclick="addItem()" class="btn-glow mt-6 w-full gradient-bg text-white py-5 rounded-2xl font-bold shadow-lg text-lg" id="addItemBtn">Add Item</button>
                         </div>
-
                         <div class="glass-white rounded-3xl shadow-2xl p-10">
                             <h3 class="text-3xl font-black gradient-text mb-8" id="manageCategoriesTitle">Manage Categories</h3>
                             <div class="flex gap-4 mb-6">
@@ -379,12 +319,10 @@
                             </div>
                             <div id="categoriesAdmin" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
                         </div>
-
                         <div class="glass-white rounded-3xl shadow-2xl p-10">
                             <h3 class="text-3xl font-black gradient-text mb-6" id="allItemsTitle">All Items</h3>
                             <div id="allItemsList" class="space-y-3"></div>
                         </div>
-
                         <div class="glass-white rounded-3xl shadow-2xl p-10">
                             <h3 class="text-3xl font-black gradient-text mb-6" id="allUsersTitle">All Users</h3>
                             <div id="allUsersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -394,12 +332,10 @@
             </main>
 
             <!-- Right Sidebar -->
-            <aside id="rightSidebar" class="slide-in-right w-96 glass-white shadow-2xl p-8 min-h-screen overflow-y-auto scrollbar-hide">
+            <aside id="rightSidebar" class="w-96 glass-white shadow-2xl p-8 min-h-screen overflow-y-auto scrollbar-hide">
                 <div class="mb-8">
                     <div class="flex items-center gap-3 mb-2">
-                        <svg class="w-10 h-10 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                        </svg>
+                        <svg class="w-10 h-10 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
                         <h2 class="text-3xl font-black gradient-text" id="trendingTitle">Trending Now</h2>
                     </div>
                     <div class="w-20 h-1 bg-gradient-to-r from-orange-400 to-red-500 rounded-full"></div>
@@ -410,322 +346,403 @@
     </div>
 
     <script>
-        let currentUser = null;
-        let isAdmin = false;
-        let authMode = 'login';
-        let selectedCategory = 'All';
-        let selectedItem = null;
-        let currentPage = 'home';
-        let ratingChart = null;
-        let newRating = 0;
-        let currentLang = 'en';
-        let userVotes = {};
+        let currentUser = null, isAdmin = false, authMode = 'login', selectedCategory = 'All', selectedItem = null, currentPage = 'home', ratingChart = null, newRating = 0, currentLang = 'en', userVotes = {}, favorites = [], watchlist = [], notifications = [], currentSorting = 'mostReviewed', darkMode = false;
 
         const translations = {
-            tr: { loginSubtitle: 'Her Şeyi Değerlendir', login: 'Giriş Yap', signup: 'Kayıt Ol', google: 'Google ile Devam Et', home: 'Ana Sayfa', profile: 'Profil', logout: 'Çıkış', categories: 'Kategoriler', trending: 'Gündem', search: 'İsim, açıklama veya etiketlere göre ara...', back: 'Geri', reviews: 'değerlendirme', views: 'görüntüleme', yourReviews: 'Değerlendirmeleriniz', noReviews: 'Henüz değerlendirme yapmadınız.', adminPanel: 'Admin Paneli', adminSubtitle: 'Tüm içeriği buradan yönetin', addNewItem: 'Yeni İçerik Ekle', addItem: 'İçerik Ekle', manageCategories: 'Kategorileri Yönet', add: 'Ekle', allItems: 'Tüm İçerikler', allUsers: 'Tüm Kullanıcılar', ratingHistory: 'Puan Geçmişi', daily: 'Günlük', weekly: 'Haftalık', monthly: 'Aylık', yearly: 'Yıllık', allTime: 'Tüm Zamanlar', submitReview: 'Değerlendirmenizi Yapın', yourRating: 'Puanınız', yourComment: 'Yorumunuz', submit: 'Gönder', allCategories: 'Tüm Kategoriler', noResults: 'Sonuç bulunamadı', authToggleSignup: 'Hesabınız yok mu? Kayıt olun', authToggleLogin: 'Hesabınız var mı? Giriş yapın', submitted: 'gönderildi', alreadyVoted: 'Bu içeriği zaten oyladınız!', similarItems: 'Benzer İçerikler', youVoted: 'Oyladınız' },
-            en: { loginSubtitle: 'Rate Everything, Everywhere', login: 'Login', signup: 'Sign Up', google: 'Continue with Google', home: 'Home', profile: 'Profile', logout: 'Logout', categories: 'Categories', trending: 'Trending Now', search: 'Search by name, description, or tags...', back: 'Back', reviews: 'reviews', views: 'views', yourReviews: 'Your Reviews', noReviews: 'You haven\'t submitted any reviews yet.', adminPanel: 'Admin Panel', adminSubtitle: 'Manage all content from here', addNewItem: 'Add New Item', addItem: 'Add Item', manageCategories: 'Manage Categories', add: 'Add', allItems: 'All Items', allUsers: 'All Users', ratingHistory: 'Rating History', daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', yearly: 'Yearly', allTime: 'All Time', submitReview: 'Submit Your Review', yourRating: 'Your Rating', yourComment: 'Your Comment', submit: 'Submit', allCategories: 'All Categories', noResults: 'No results found', authToggleSignup: 'Don\'t have an account? Sign up', authToggleLogin: 'Already have an account? Login', submitted: 'submitted', alreadyVoted: 'You already voted for this item!', similarItems: 'Similar Items', youVoted: 'You Voted' },
-            de: { loginSubtitle: 'Bewerte Alles, Überall', login: 'Anmelden', signup: 'Registrieren', google: 'Mit Google fortfahren', home: 'Startseite', profile: 'Profil', logout: 'Abmelden', categories: 'Kategorien', trending: 'Trending Jetzt', search: 'Nach Name, Beschreibung oder Tags suchen...', back: 'Zurück', reviews: 'Bewertungen', views: 'Ansichten', yourReviews: 'Ihre Bewertungen', noReviews: 'Sie haben noch keine Bewertungen abgegeben.', adminPanel: 'Admin-Panel', adminSubtitle: 'Alle Inhalte hier verwalten', addNewItem: 'Neues Element hinzufügen', addItem: 'Element hinzufügen', manageCategories: 'Kategorien verwalten', add: 'Hinzufügen', allItems: 'Alle Elemente', allUsers: 'Alle Benutzer', ratingHistory: 'Bewertungsverlauf', daily: 'Täglich', weekly: 'Wöchentlich', monthly: 'Monatlich', yearly: 'Jährlich', allTime: 'Alle Zeiten', submitReview: 'Ihre Bewertung abgeben', yourRating: 'Ihre Bewertung', yourComment: 'Ihr Kommentar', submit: 'Absenden', allCategories: 'Alle Kategorien', noResults: 'Keine Ergebnisse gefunden', authToggleSignup: 'Noch kein Konto? Registrieren', authToggleLogin: 'Bereits ein Konto? Anmelden', submitted: 'eingereicht', alreadyVoted: 'Sie haben bereits für dieses Element gestimmt!', similarItems: 'Ähnliche Elemente', youVoted: 'Sie haben gestimmt' },
-            fr: { loginSubtitle: 'Évaluez Tout, Partout', login: 'Connexion', signup: 'S\'inscrire', google: 'Continuer avec Google', home: 'Accueil', profile: 'Profil', logout: 'Déconnexion', categories: 'Catégories', trending: 'Tendances', search: 'Rechercher par nom, description ou tags...', back: 'Retour', reviews: 'avis', views: 'vues', yourReviews: 'Vos Avis', noReviews: 'Vous n\'avez pas encore soumis d\'avis.', adminPanel: 'Panneau Admin', adminSubtitle: 'Gérer tout le contenu ici', addNewItem: 'Ajouter un Nouvel Élément', addItem: 'Ajouter un Élément', manageCategories: 'Gérer les Catégories', add: 'Ajouter', allItems: 'Tous les Éléments', allUsers: 'Tous les Utilisateurs', ratingHistory: 'Historique des Notes', daily: 'Quotidien', weekly: 'Hebdomadaire', monthly: 'Mensuel', yearly: 'Annuel', allTime: 'Tout le Temps', submitReview: 'Soumettre Votre Avis', yourRating: 'Votre Note', yourComment: 'Votre Commentaire', submit: 'Soumettre', allCategories: 'Toutes les Catégories', noResults: 'Aucun résultat trouvé', authToggleSignup: 'Pas de compte? S\'inscrire', authToggleLogin: 'Déjà un compte? Connexion', submitted: 'soumis', alreadyVoted: 'Vous avez déjà voté pour cet élément!', similarItems: 'Éléments Similaires', youVoted: 'Vous avez voté' },
-            es: { loginSubtitle: 'Califica Todo, En Todas Partes', login: 'Iniciar Sesión', signup: 'Registrarse', google: 'Continuar con Google', home: 'Inicio', profile: 'Perfil', logout: 'Cerrar Sesión', categories: 'Categorías', trending: 'Tendencias', search: 'Buscar por nombre, descripción o etiquetas...', back: 'Atrás', reviews: 'reseñas', views: 'vistas', yourReviews: 'Tus Reseñas', noReviews: 'Aún no has enviado ninguna reseña.', adminPanel: 'Panel de Admin', adminSubtitle: 'Administrar todo el contenido desde aquí', addNewItem: 'Agregar Nuevo Elemento', addItem: 'Agregar Elemento', manageCategories: 'Administrar Categorías', add: 'Agregar', allItems: 'Todos los Elementos', allUsers: 'Todos los Usuarios', ratingHistory: 'Historial de Calificaciones', daily: 'Diario', weekly: 'Semanal', monthly: 'Mensual', yearly: 'Anual', allTime: 'Todo el Tiempo', submitReview: 'Enviar Tu Reseña', yourRating: 'Tu Calificación', yourComment: 'Tu Comentario', submit: 'Enviar', allCategories: 'Todas las Categorías', noResults: 'No se encontraron resultados', authToggleSignup: '¿No tienes cuenta? Regístrate', authToggleLogin: '¿Ya tienes cuenta? Inicia sesión', submitted: 'enviado', alreadyVoted: '¡Ya votaste por este elemento!', similarItems: 'Elementos Similares', youVoted: 'Votaste' }
+            tr: { loginSubtitle: 'Her Şeyi Değerlendir', login: 'Giriş Yap', signup: 'Kayıt Ol', google: 'Google ile Devam Et', home: 'Ana Sayfa', profile: 'Profil', logout: 'Çıkış', categories: 'Kategoriler', trending: 'Gündem', search: 'Ara...', back: 'Geri', reviews: 'değerlendirme', views: 'görüntüleme', yourReviews: 'Değerlendirmeleriniz', noReviews: 'Henüz değerlendirme yok.', adminPanel: 'Admin Paneli', adminSubtitle: 'Tüm içeriği buradan yönetin', addNewItem: 'Yeni İçerik Ekle', addItem: 'İçerik Ekle', manageCategories: 'Kategorileri Yönet', add: 'Ekle', allItems: 'Tüm İçerikler', allUsers: 'Tüm Kullanıcılar', ratingHistory: 'Puan Geçmişi', daily: 'Günlük', weekly: 'Haftalık', monthly: 'Aylık', yearly: 'Yıllık', allTime: 'Tüm Zamanlar', submitReview: 'Değerlendirme Yap', yourRating: 'Puanınız', yourComment: 'Yorumunuz', submit: 'Gönder', allCategories: 'Tüm Kategoriler', noResults: 'Sonuç bulunamadı', authToggleSignup: 'Hesabınız yok mu? Kayıt olun', authToggleLogin: 'Hesabınız var mı? Giriş yapın', submitted: 'gönderildi', alreadyVoted: 'Bu içeriği zaten oyladınız!', similarItems: 'Benzer İçerikler', youVoted: 'Oyladınız', random: 'Rastgele', versus: 'Karşılaştır', hotTakes: 'Sıcak Görüşler', trends: 'Trendler', favorites: 'Favoriler' },
+            en: { loginSubtitle: 'Rate Everything, Everywhere', login: 'Login', signup: 'Sign Up', google: 'Continue with Google', home: 'Home', profile: 'Profile', logout: 'Logout', categories: 'Categories', trending: 'Trending Now', search: 'Search...', back: 'Back', reviews: 'reviews', views: 'views', yourReviews: 'Your Reviews', noReviews: 'No reviews yet.', adminPanel: 'Admin Panel', adminSubtitle: 'Manage all content from here', addNewItem: 'Add New Item', addItem: 'Add Item', manageCategories: 'Manage Categories', add: 'Add', allItems: 'All Items', allUsers: 'All Users', ratingHistory: 'Rating History', daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', yearly: 'Yearly', allTime: 'All Time', submitReview: 'Submit Review', yourRating: 'Your Rating', yourComment: 'Your Comment', submit: 'Submit', allCategories: 'All Categories', noResults: 'No results found', authToggleSignup: 'Don\'t have an account? Sign up', authToggleLogin: 'Already have an account? Login', submitted: 'submitted', alreadyVoted: 'You already voted!', similarItems: 'Similar Items', youVoted: 'You Voted', random: 'Random', versus: 'Versus', hotTakes: 'Hot Takes', trends: 'Trends', favorites: 'Favorites' },
+            de: { loginSubtitle: 'Bewerte Alles', login: 'Anmelden', signup: 'Registrieren', google: 'Mit Google', home: 'Startseite', profile: 'Profil', logout: 'Abmelden', categories: 'Kategorien', trending: 'Trending', search: 'Suchen...', back: 'Zurück', reviews: 'Bewertungen', views: 'Ansichten', yourReviews: 'Ihre Bewertungen', noReviews: 'Keine Bewertungen.', adminPanel: 'Admin', adminSubtitle: 'Alles verwalten', addNewItem: 'Neu', addItem: 'Hinzufügen', manageCategories: 'Kategorien', add: 'Hinzufügen', allItems: 'Alle', allUsers: 'Benutzer', ratingHistory: 'Verlauf', daily: 'Täglich', weekly: 'Wöchentlich', monthly: 'Monatlich', yearly: 'Jährlich', allTime: 'Alle', submitReview: 'Bewerten', yourRating: 'Bewertung', yourComment: 'Kommentar', submit: 'Senden', allCategories: 'Alle', noResults: 'Keine Ergebnisse', authToggleSignup: 'Registrieren', authToggleLogin: 'Anmelden', submitted: 'gesendet', alreadyVoted: 'Bereits gestimmt!', similarItems: 'Ähnlich', youVoted: 'Gestimmt', random: 'Zufall', versus: 'Versus', hotTakes: 'Hot', trends: 'Trends', favorites: 'Favoriten' },
+            fr: { loginSubtitle: 'Évaluez Tout', login: 'Connexion', signup: 'S\'inscrire', google: 'Avec Google', home: 'Accueil', profile: 'Profil', logout: 'Déconnexion', categories: 'Catégories', trending: 'Tendances', search: 'Rechercher...', back: 'Retour', reviews: 'avis', views: 'vues', yourReviews: 'Vos Avis', noReviews: 'Pas d\'avis.', adminPanel: 'Admin', adminSubtitle: 'Gérer', addNewItem: 'Nouveau', addItem: 'Ajouter', manageCategories: 'Catégories', add: 'Ajouter', allItems: 'Tous', allUsers: 'Utilisateurs', ratingHistory: 'Historique', daily: 'Quotidien', weekly: 'Hebdo', monthly: 'Mensuel', yearly: 'Annuel', allTime: 'Tout', submitReview: 'Évaluer', yourRating: 'Note', yourComment: 'Commentaire', submit: 'Soumettre', allCategories: 'Toutes', noResults: 'Aucun résultat', authToggleSignup: 'S\'inscrire', authToggleLogin: 'Connexion', submitted: 'envoyé', alreadyVoted: 'Déjà voté!', similarItems: 'Similaires', youVoted: 'Voté', random: 'Aléatoire', versus: 'Versus', hotTakes: 'Hot', trends: 'Tendances', favorites: 'Favoris' },
+            es: { loginSubtitle: 'Califica Todo', login: 'Iniciar', signup: 'Registrarse', google: 'Con Google', home: 'Inicio', profile: 'Perfil', logout: 'Salir', categories: 'Categorías', trending: 'Tendencias', search: 'Buscar...', back: 'Atrás', reviews: 'reseñas', views: 'vistas', yourReviews: 'Tus Reseñas', noReviews: 'Sin reseñas.', adminPanel: 'Admin', adminSubtitle: 'Administrar', addNewItem: 'Nuevo', addItem: 'Agregar', manageCategories: 'Categorías', add: 'Agregar', allItems: 'Todos', allUsers: 'Usuarios', ratingHistory: 'Historial', daily: 'Diario', weekly: 'Semanal', monthly: 'Mensual', yearly: 'Anual', allTime: 'Todo', submitReview: 'Evaluar', yourRating: 'Calificación', yourComment: 'Comentario', submit: 'Enviar', allCategories: 'Todas', noResults: 'Sin resultados', authToggleSignup: 'Registrarse', authToggleLogin: 'Iniciar', submitted: 'enviado', alreadyVoted: '¡Ya votaste!', similarItems: 'Similares', youVoted: 'Votaste', random: 'Aleatorio', versus: 'Versus', hotTakes: 'Hot', trends: 'Tendencias', favorites: 'Favoritos' }
         };
 
         function t(key) { return translations[currentLang][key] || translations['en'][key] || key; }
-
-        function changeLanguage(lang) {
-            currentLang = lang;
-            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            updateUILanguage();
-        }
-
+        function changeLanguage(lang) { currentLang = lang; document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active')); event.target.classList.add('active'); updateUILanguage(); }
         function updateUILanguage() {
-            const els = { loginSubtitle: 'loginSubtitle', loginBtn: 'login', signupBtn: 'signup', googleBtn: 'google', homeNav: 'home', profileNav: 'profile', logoutNav: 'logout', categoriesTitle: 'categories', trendingTitle: 'trending', searchInput: 'search', backBtn: 'back', yourReviewsTitle: 'yourReviews', adminPanelTitle: 'adminPanel', adminPanelSubtitle: 'adminSubtitle', addItemTitle: 'addNewItem', addItemBtn: 'addItem', manageCategoriesTitle: 'manageCategories', addCategoryBtn: 'add', allItemsTitle: 'allItems', allUsersTitle: 'allUsers' };
-            for (let id in els) {
-                const el = document.getElementById(id);
-                if (el) { if (id === 'searchInput') el.placeholder = t(els[id]); else el.textContent = t(els[id]); }
+            const els = { loginSubtitle:'loginSubtitle', loginBtn:'login', signupBtn:'signup', googleBtn:'google', homeNav:'home', profileNav:'profile', logoutNav:'logout', categoriesTitle:'categories', trendingTitle:'trending', searchInput:'search', backBtn:'back', randomBtn:'random', versusNav:'versus', hotTakesNav:'hotTakes', trendsNav:'trends', favoritesNav:'favorites' };
+            for(let id in els) { const el=document.getElementById(id); if(el) { if(id==='searchInput') el.placeholder=t(els[id]); else el.textContent=t(els[id]); } }
+            if(currentPage==='home'&&!selectedItem) renderItems();
+            if(currentPage==='home'&&selectedItem) viewItem(selectedItem.id);
+            renderCategories(); renderTrending();
+        }
+
+        const categories = ['Celebrities','Brands','Companies','Stocks/Funds','Sports Clubs','Politicians','YouTube Channels','Movies/TV Shows','Music','Technology'];
+        const items = [{id:'1',name:'Tarkan',category:'Celebrities',description:'Legendary Turkish pop music icon',imageUrl:'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400',tags:['music','pop','artist','turkish'],averageRating:0,reviewCount:0,viewCount:0,ratingHistory:{daily:[],weekly:[],monthly:[],yearly:[],allTime:[]},createdAt:new Date().toISOString()},{id:'2',name:'Apple',category:'Brands',description:'Leading technology brand',imageUrl:'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400',tags:['technology','phone','computer'],averageRating:0,reviewCount:0,viewCount:0,ratingHistory:{daily:[],weekly:[],monthly:[],yearly:[],allTime:[]},createdAt:new Date().toISOString()},{id:'3',name:'Galatasaray',category:'Sports Clubs',description:'UEFA Cup champion',imageUrl:'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400',tags:['football','sports','turkey'],averageRating:0,reviewCount:0,viewCount:0,ratingHistory:{daily:[],weekly:[],monthly:[],yearly:[],allTime:[]},createdAt:new Date().toISOString()},{id:'4',name:'Tesla',category:'Companies',description:'Electric vehicle leader',imageUrl:'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400',tags:['electric','technology','car'],averageRating:0,reviewCount:0,viewCount:0,ratingHistory:{daily:[],weekly:[],monthly:[],yearly:[],allTime:[]},createdAt:new Date().toISOString()},{id:'5',name:'MrBeast',category:'YouTube Channels',description:'Most subscribed YouTube channel',imageUrl:'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400',tags:['youtube','content','entertainment'],averageRating:0,reviewCount:0,viewCount:0,ratingHistory:{daily:[],weekly:[],monthly:[],yearly:[],allTime:[]},createdAt:new Date().toISOString()}];
+        const reviews = [], users = [], reviewReactions = {};
+        let nextItemId=6, nextUserId=1, nextReviewId=1;
+
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark-mode', darkMode);
+            document.body.classList.toggle('light-mode', !darkMode);
+            document.getElementById('darkModeToggle').classList.toggle('active', darkMode);
+        }
+
+        function hasUserVoted(userId,itemId) { return userVotes[userId+'-'+itemId]===true; }
+        function markUserVoted(userId,itemId) { userVotes[userId+'-'+itemId]=true; }
+        function isFavorite(itemId) { return favorites.includes(itemId); }
+        function toggleFavorite(itemId) {
+            if(isFavorite(itemId)) favorites=favorites.filter(id=>id!==itemId);
+            else { favorites.push(itemId); addNotification('Added to favorites!'); }
+            renderItems();
+        }
+
+        function addNotification(message) {
+            notifications.push({id:Date.now(),message:message,timestamp:new Date().toISOString()});
+            document.getElementById('notificationDot').classList.remove('hidden');
+        }
+
+        function toggleNotifications() {
+            const panel = document.getElementById('notificationPanel');
+            panel.classList.toggle('hidden');
+            if(!panel.classList.contains('hidden')) {
+                document.getElementById('notificationDot').classList.add('hidden');
+                renderNotifications();
             }
-            document.getElementById('authTitle').textContent = t(authMode === 'login' ? 'login' : 'signup');
-            document.getElementById('authButton').textContent = t(authMode === 'login' ? 'login' : 'signup');
-            document.getElementById('authToggle').textContent = t(authMode === 'login' ? 'authToggleSignup' : 'authToggleLogin');
-            if (currentPage === 'home' && !selectedItem) renderItems();
-            if (currentPage === 'home' && selectedItem) viewItem(selectedItem.id);
-            if (currentPage === 'profile') renderProfile();
-            if (currentPage === 'admin') renderAdmin();
-            renderCategories();
-            renderTrending();
         }
 
-        const categories = ['Celebrities', 'Brands', 'Companies', 'Stocks/Funds', 'Sports Clubs', 'Politicians', 'YouTube Channels', 'Movies/TV Shows', 'Music', 'Technology'];
-        const items = [ {id: '1', name: 'Tarkan', category: 'Celebrities', description: 'Legendary Turkish pop music icon, globally recognized artist', imageUrl: 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400', tags: ['music', 'pop', 'artist', 'turkish'], averageRating: 0, reviewCount: 0, viewCount: 0, ratingHistory: {daily: [], weekly: [], monthly: [], yearly: [], allTime: []}}, {id: '2', name: 'Apple', category: 'Brands', description: 'Leading technology brand, innovation and design icon', imageUrl: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400', tags: ['technology', 'phone', 'computer', 'innovation'], averageRating: 0, reviewCount: 0, viewCount: 0, ratingHistory: {daily: [], weekly: [], monthly: [], yearly: [], allTime: []}}, {id: '3', name: 'Galatasaray', category: 'Sports Clubs', description: 'One of Turkey\'s most prestigious sports clubs, UEFA Cup champion', imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400', tags: ['football', 'sports', 'turkey', 'yellow-red'], averageRating: 0, reviewCount: 0, viewCount: 0, ratingHistory: {daily: [], weekly: [], monthly: [], yearly: [], allTime: []}}, {id: '4', name: 'Tesla', category: 'Companies', description: 'Revolutionary electric vehicle company, sustainable energy leader', imageUrl: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400', tags: ['electric vehicle', 'technology', 'sustainability', 'autonomous'], averageRating: 0, reviewCount: 0, viewCount: 0, ratingHistory: {daily: [], weekly: [], monthly: [], yearly: [], allTime: []}}, {id: '5', name: 'MrBeast', category: 'YouTube Channels', description: 'One of the world\'s most subscribed YouTube channels', imageUrl: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400', tags: ['youtube', 'content', 'entertainment', 'philanthropy'], averageRating: 0, reviewCount: 0, viewCount: 0, ratingHistory: {daily: [], weekly: [], monthly: [], yearly: [], allTime: []}} ];
-        const reviews = [];
-        const users = [];
-        let nextItemId = 6;
-        let nextUserId = 1;
-        let nextReviewId = 1;
-
-        function hasUserVoted(userId, itemId) {
-            const key = userId + '-' + itemId;
-            return userVotes[key] === true;
+        function renderNotifications() {
+            const container = document.getElementById('notificationsList');
+            if(notifications.length===0) { container.innerHTML='<p class="text-gray-500 text-center">No notifications</p>'; return; }
+            let html = '';
+            notifications.slice(-10).reverse().forEach(notif => {
+                html += '<div class="p-3 glass-white rounded-lg mb-2"><p class="text-sm">'+notif.message+'</p><p class="text-xs text-gray-500 mt-1">'+new Date(notif.timestamp).toLocaleString()+'</p></div>';
+            });
+            container.innerHTML = html;
         }
 
-        function markUserVoted(userId, itemId) {
-            const key = userId + '-' + itemId;
-            userVotes[key] = true;
+        function randomItem() {
+            const randomIdx = Math.floor(Math.random() * items.length);
+            viewItem(items[randomIdx].id);
         }
 
-        function showAuthModal(mode) { authMode = mode; document.getElementById('authModal').classList.remove('hidden'); document.getElementById('authTitle').textContent = t(mode === 'login' ? 'login' : 'signup'); document.getElementById('authButton').textContent = t(mode === 'login' ? 'login' : 'signup'); document.getElementById('authToggle').textContent = t(mode === 'login' ? 'authToggleSignup' : 'authToggleLogin'); document.getElementById('signupFields').classList.toggle('hidden', mode === 'login'); }
+        function setSorting(type) {
+            currentSorting = type;
+            document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('sort'+type.charAt(0).toUpperCase()+type.slice(1)).classList.add('active');
+            renderItems();
+        }
+
+        function getSortedItems(itemsList) {
+            let sorted = [...itemsList];
+            if(currentSorting === 'rating') sorted.sort((a,b) => b.averageRating - a.averageRating);
+            else if(currentSorting === 'newest') sorted.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            else if(currentSorting === 'mostReviewed') sorted.sort((a,b) => b.reviewCount - a.reviewCount);
+            else if(currentSorting === 'trending') sorted.sort((a,b) => (b.reviewCount*2 + b.viewCount) - (a.reviewCount*2 + a.viewCount));
+            else if(currentSorting === 'views') sorted.sort((a,b) => b.viewCount - a.viewCount);
+            return sorted;
+        }
+
+        function showAuthModal(mode) { authMode=mode; document.getElementById('authModal').classList.remove('hidden'); document.getElementById('authTitle').textContent=t(mode==='login'?'login':'signup'); document.getElementById('authButton').textContent=t(mode==='login'?'login':'signup'); document.getElementById('authToggle').textContent=t(mode==='login'?'authToggleSignup':'authToggleLogin'); document.getElementById('signupFields').classList.toggle('hidden',mode==='login'); }
         function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
-        function toggleAuthMode() { showAuthModal(authMode === 'login' ? 'signup' : 'login'); }
-
+        function toggleAuthMode() { showAuthModal(authMode==='login'?'signup':'login'); }
         function handleAuth() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            if (email === 'admin' && password === '321') { currentUser = {id: 'admin', email: 'admin@oolido.com', displayName: 'Administrator', isAdmin: true}; isAdmin = true; document.getElementById('adminBtn').classList.remove('hidden'); closeAuthModal(); showMainApp(); showPage('admin'); return; }
-            if (authMode === 'login') { const user = users.find(u => u.email === email && u.password === password); if (user) { currentUser = user; closeAuthModal(); showMainApp(); } else alert('Invalid email or password!'); } else { const displayName = document.getElementById('displayName').value; if (!displayName || !email || !password) { alert('Please fill all fields!'); return; } const newUser = {id: 'user-' + nextUserId++, email: email, password: password, displayName: displayName, createdAt: new Date().toISOString()}; users.push(newUser); currentUser = newUser; closeAuthModal(); showMainApp(); }
+            const email=document.getElementById('email').value, password=document.getElementById('password').value;
+            if(email==='admin'&&password==='321') { currentUser={id:'admin',email:'admin@oolido.com',displayName:'Administrator',isAdmin:true}; isAdmin=true; document.getElementById('adminBtn').classList.remove('hidden'); closeAuthModal(); showMainApp(); showPage('admin'); return; }
+            if(authMode==='login') { const user=users.find(u=>u.email===email&&u.password===password); if(user) { currentUser=user; closeAuthModal(); showMainApp(); } else alert('Invalid!'); } else { const displayName=document.getElementById('displayName').value; if(!displayName||!email||!password) { alert('Fill all fields!'); return; } const newUser={id:'user-'+nextUserId++,email:email,password:password,displayName:displayName,createdAt:new Date().toISOString()}; users.push(newUser); currentUser=newUser; closeAuthModal(); showMainApp(); }
         }
-
-        function handleGoogleLogin() { const googleUser = {id: 'google-' + nextUserId++, email: 'user' + nextUserId + '@gmail.com', displayName: 'Google User ' + nextUserId, createdAt: new Date().toISOString()}; users.push(googleUser); currentUser = googleUser; showMainApp(); }
-        function handleLogout() { currentUser = null; isAdmin = false; document.getElementById('mainApp').classList.add('hidden'); document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('adminBtn').classList.add('hidden'); }
+        function handleGoogleLogin() { const googleUser={id:'google-'+nextUserId++,email:'user'+nextUserId+'@gmail.com',displayName:'Google User '+nextUserId,createdAt:new Date().toISOString()}; users.push(googleUser); currentUser=googleUser; showMainApp(); }
+        function handleLogout() { currentUser=null; isAdmin=false; document.getElementById('mainApp').classList.add('hidden'); document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('adminBtn').classList.add('hidden'); }
         function showMainApp() { document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden'); renderCategories(); renderItems(); renderTrending(); }
-        function showPage(page) { currentPage = page; document.getElementById('homePage').classList.add('hidden'); document.getElementById('detailPage').classList.add('hidden'); document.getElementById('profilePage').classList.add('hidden'); document.getElementById('adminPage').classList.add('hidden'); if (page === 'home') { document.getElementById('homePage').classList.remove('hidden'); renderItems(); } else if (page === 'profile') { document.getElementById('profilePage').classList.remove('hidden'); renderProfile(); } else if (page === 'admin' && isAdmin) { document.getElementById('adminPage').classList.remove('hidden'); renderAdmin(); } }
-        function backToHome() { selectedItem = null; showPage('home'); }
+        function showPage(page) {
+            currentPage=page;
+            ['homePage','versusPage','hotTakesPage','trendsPage','favoritesPage','detailPage','profilePage','adminPage'].forEach(p=>document.getElementById(p).classList.add('hidden'));
+            if(page==='home') { document.getElementById('homePage').classList.remove('hidden'); renderItems(); }
+            else if(page==='versus') { document.getElementById('versusPage').classList.remove('hidden'); renderVersus(); }
+            else if(page==='hotTakes') { document.getElementById('hotTakesPage').classList.remove('hidden'); renderHotTakes(); }
+            else if(page==='trends') { document.getElementById('trendsPage').classList.remove('hidden'); renderTrends(); }
+            else if(page==='favorites') { document.getElementById('favoritesPage').classList.remove('hidden'); renderFavorites(); }
+            else if(page==='profile') { document.getElementById('profilePage').classList.remove('hidden'); renderProfile(); }
+            else if(page==='admin'&&isAdmin) { document.getElementById('adminPage').classList.remove('hidden'); renderAdmin(); }
+        }
+        function backToHome() { selectedItem=null; showPage('home'); }
 
         function renderCategories() {
-            const container = document.getElementById('categoriesList');
-            let html = '<button onclick="filterByCategory(\'All\')" class="category-btn w-full text-left px-6 py-4 rounded-2xl font-semibold text-lg transition-all ' + (selectedCategory === 'All' ? 'gradient-bg text-white shadow-lg active' : 'text-gray-700 hover:bg-purple-50') + '">' + t('allCategories') + '</button>';
-            categories.forEach(cat => { html += '<button onclick="filterByCategory(\'' + cat + '\')" class="category-btn w-full text-left px-6 py-4 rounded-2xl font-semibold text-lg transition-all ' + (selectedCategory === cat ? 'gradient-bg text-white shadow-lg active' : 'text-gray-700 hover:bg-purple-50') + '">' + cat + '</button>'; });
-            container.innerHTML = html;
+            const container=document.getElementById('categoriesList');
+            let html='<button onclick="filterByCategory(\'All\')" class="category-btn w-full text-left px-6 py-4 rounded-2xl font-semibold text-lg transition-all '+(selectedCategory==='All'?'gradient-bg text-white shadow-lg active':'hover:bg-purple-50')+'">'+t('allCategories')+'</button>';
+            categories.forEach(cat=>{ html+='<button onclick="filterByCategory(\''+cat+'\')" class="category-btn w-full text-left px-6 py-4 rounded-2xl font-semibold text-lg transition-all '+(selectedCategory===cat?'gradient-bg text-white shadow-lg active':'hover:bg-purple-50')+'">'+cat+'</button>'; });
+            container.innerHTML=html;
         }
 
-        function filterByCategory(category) { selectedCategory = category; renderCategories(); filterItems(); }
+        function filterByCategory(category) { selectedCategory=category; renderCategories(); filterItems(); }
 
         function renderItems() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = items.filter(item => { const matchesSearch = item.name.toLowerCase().includes(searchTerm) || item.description.toLowerCase().includes(searchTerm) || item.tags.some(tag => tag.toLowerCase().includes(searchTerm)); const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory; return matchesSearch && matchesCategory; });
-            const container = document.getElementById('itemsGrid');
-            let html = '';
-            filtered.forEach(item => {
-                const voted = hasUserVoted(currentUser.id, item.id);
-                html += '<div class="card-3d glass-white rounded-3xl overflow-hidden shadow-xl cursor-pointer" onclick="viewItem(\'' + item.id + '\')">';
-                html += '<div class="relative h-56 overflow-hidden">';
-                html += '<img src="' + item.imageUrl + '" alt="' + item.name + '" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">';
-                html += '<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>';
-                html += '<div class="absolute top-4 right-4 badge">' + item.category + '</div>';
-                if (voted) html += '<div class="absolute top-4 left-4 voted-badge"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>' + t('youVoted') + '</div>';
-                html += '<div class="absolute bottom-4 left-4 flex items-center gap-2 text-white text-sm font-semibold"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>' + item.viewCount + '</div>';
-                html += '</div><div class="p-6">';
-                html += '<h3 class="text-2xl font-bold text-gray-800 mb-3">' + item.name + '</h3>';
-                html += '<p class="text-gray-600 mb-4 line-clamp-2 leading-relaxed">' + item.description + '</p>';
-                html += '<div class="flex items-center justify-between mb-4">' + renderStars(Math.round(item.averageRating), true);
-                html += '<span class="text-sm text-gray-500 font-semibold">' + item.reviewCount + ' ' + t('reviews') + '</span></div>';
-                html += '<div class="flex flex-wrap gap-2">';
-                item.tags.slice(0, 3).forEach(tag => { html += '<span class="badge text-xs">#' + tag + '</span>'; });
-                html += '</div></div></div>';
+            const searchTerm=document.getElementById('searchInput').value.toLowerCase();
+            let filtered=items.filter(item=>{ const matchesSearch=item.name.toLowerCase().includes(searchTerm)||item.description.toLowerCase().includes(searchTerm)||item.tags.some(tag=>tag.toLowerCase().includes(searchTerm)); const matchesCategory=selectedCategory==='All'||item.category===selectedCategory; return matchesSearch&&matchesCategory; });
+            filtered = getSortedItems(filtered);
+            const container=document.getElementById('itemsGrid');
+            let html='';
+            filtered.forEach(item=>{
+                const voted=hasUserVoted(currentUser.id,item.id), fav=isFavorite(item.id);
+                html+='<div class="card-3d glass-white rounded-3xl overflow-hidden shadow-xl cursor-pointer"><div class="relative h-56 overflow-hidden" onclick="viewItem(\''+item.id+'\')">';
+                html+='<img src="'+item.imageUrl+'" alt="'+item.name+'" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">';
+                html+='<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>';
+                html+='<div class="absolute top-4 right-4 badge">'+item.category+'</div>';
+                if(voted) html+='<div class="absolute top-4 left-4 bg-gradient-to-r from-orange-400 to-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">'+t('youVoted')+'</div>';
+                html+='<div class="absolute bottom-4 left-4 flex items-center gap-2 text-white text-sm font-semibold"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>'+item.viewCount+'</div>';
+                html+='</div><div class="p-6"><h3 class="text-2xl font-bold mb-3">'+item.name+'</h3><p class="text-sm mb-4 line-clamp-2">'+item.description+'</p>';
+                html+='<div class="flex items-center justify-between mb-4">'+renderStars(Math.round(item.averageRating),true)+'<span class="text-sm font-semibold">'+item.reviewCount+' '+t('reviews')+'</span></div>';
+                html+='<div class="flex items-center justify-between"><div class="flex flex-wrap gap-2">';
+                item.tags.slice(0,2).forEach(tag=>{ html+='<span class="badge text-xs">#'+tag+'</span>'; });
+                html+='</div><button onclick="toggleFavorite(\''+item.id+'\'); event.stopPropagation();" class="text-2xl '+(fav?'text-yellow-500':'text-gray-300')+' hover:scale-125 transition-transform">'+(fav?'⭐':'☆')+'</button></div></div></div>';
             });
-            if (filtered.length === 0) html = '<div class="col-span-full text-center py-20"><p class="text-gray-500 text-2xl font-semibold">' + t('noResults') + '</p></div>';
-            container.innerHTML = html;
+            if(filtered.length===0) html='<div class="col-span-full text-center py-20"><p class="text-2xl font-semibold">'+t('noResults')+'</p></div>';
+            container.innerHTML=html;
         }
 
         function filterItems() { renderItems(); }
 
         function renderTrending() {
-            const trending = items.slice().sort((a, b) => b.reviewCount - a.reviewCount).slice(0, 10);
-            const container = document.getElementById('trendingList');
-            let html = '';
-            trending.forEach((item, index) => {
-                html += '<div class="trending-item p-5 rounded-2xl cursor-pointer glass-white" onclick="viewItem(\'' + item.id + '\')">';
-                html += '<div class="flex items-center gap-4">';
-                html += '<div class="flex-shrink-0 w-12 h-12 gradient-bg rounded-full flex items-center justify-center text-white font-black text-xl shadow-lg">' + (index + 1) + '</div>';
-                html += '<div class="flex-shrink-0 w-16 h-16 rounded-2xl overflow-hidden shadow-lg"><img src="' + item.imageUrl + '" alt="' + item.name + '" class="w-full h-full object-cover"></div>';
-                html += '<div class="flex-1 min-w-0"><p class="font-bold text-base truncate mb-1">' + item.name + '</p>';
-                html += '<div class="flex items-center gap-1 mb-1">' + renderStars(Math.round(item.averageRating), true, 'small');
-                html += '<span class="text-gray-500 text-xs font-semibold">(' + item.reviewCount + ')</span></div>';
-                html += '<p class="text-xs text-gray-500 font-medium">' + item.viewCount + ' ' + t('views') + '</p></div>';
-                html += '<svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
-                html += '</div></div>';
+            const trending=items.slice().sort((a,b)=>b.reviewCount-a.reviewCount).slice(0,10);
+            const container=document.getElementById('trendingList');
+            let html='';
+            trending.forEach((item,index)=>{
+                html+='<div class="trending-item p-5 rounded-2xl cursor-pointer glass-white" onclick="viewItem(\''+item.id+'\')">';
+                html+='<div class="flex items-center gap-4"><div class="flex-shrink-0 w-12 h-12 gradient-bg rounded-full flex items-center justify-center text-white font-black text-xl shadow-lg">'+(index+1)+'</div>';
+                html+='<div class="flex-shrink-0 w-16 h-16 rounded-2xl overflow-hidden shadow-lg"><img src="'+item.imageUrl+'" alt="'+item.name+'" class="w-full h-full object-cover"></div>';
+                html+='<div class="flex-1 min-w-0"><p class="font-bold text-base truncate mb-1">'+item.name+'</p><div class="flex items-center gap-1 mb-1">'+renderStars(Math.round(item.averageRating),true,'small')+'<span class="text-xs font-semibold">('+item.reviewCount+')</span></div>';
+                html+='<p class="text-xs font-medium">'+item.viewCount+' '+t('views')+'</p></div><svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div></div>';
             });
-            container.innerHTML = html;
+            container.innerHTML=html;
         }
 
-        function getSimilarItems(item) {
-            return items.filter(i => i.id !== item.id && (i.category === item.category || i.tags.some(tag => item.tags.includes(tag)))).slice(0, 4);
+        function renderVersus() {
+            const vs1=document.getElementById('versus1'), vs2=document.getElementById('versus2');
+            let html='<option value="">Select...</option>';
+            items.forEach(item=>{ html+='<option value="'+item.id+'">'+item.name+'</option>'; });
+            vs1.innerHTML=html; vs2.innerHTML=html;
         }
+
+        function updateVersus() {
+            const id1=document.getElementById('versus1').value, id2=document.getElementById('versus2').value;
+            if(!id1||!id2) return;
+            const item1=items.find(i=>i.id===id1), item2=items.find(i=>i.id===id2);
+            let html='<div class="grid grid-cols-1 lg:grid-cols-2 gap-8"><div class="versus-card glass-white rounded-3xl overflow-hidden shadow-xl"><img src="'+item1.imageUrl+'" class="w-full h-64 object-cover"><div class="p-8"><h3 class="text-3xl font-bold mb-4">'+item1.name+'</h3><p class="mb-4">'+item1.description+'</p>'+renderStars(Math.round(item1.averageRating),true)+'<p class="mt-4 text-2xl font-bold">'+item1.averageRating.toFixed(1)+'/5</p><p class="text-gray-500">'+item1.reviewCount+' reviews</p></div></div>';
+            html+='<div class="versus-card glass-white rounded-3xl overflow-hidden shadow-xl"><img src="'+item2.imageUrl+'" class="w-full h-64 object-cover"><div class="p-8"><h3 class="text-3xl font-bold mb-4">'+item2.name+'</h3><p class="mb-4">'+item2.description+'</p>'+renderStars(Math.round(item2.averageRating),true)+'<p class="mt-4 text-2xl font-bold">'+item2.averageRating.toFixed(1)+'/5</p><p class="text-gray-500">'+item2.reviewCount+' reviews</p></div></div></div>';
+            document.getElementById('versusComparison').innerHTML=html;
+        }
+
+        function renderHotTakes() {
+            const day24Ago = new Date(Date.now() - 24*60*60*1000);
+            const hot = reviews.filter(r => new Date(r.createdAt) > day24Ago).map(r => {
+                const item = items.find(i => i.id === r.itemId);
+                return {...item, recentReviews: 1};
+            });
+            const grouped = {};
+            hot.forEach(h => {
+                if(grouped[h.id]) grouped[h.id].recentReviews++;
+                else grouped[h.id] = h;
+            });
+            const sorted = Object.values(grouped).sort((a,b) => b.recentReviews - a.recentReviews).slice(0,9);
+            let html = '';
+            sorted.forEach(item => {
+                html += '<div class="card-3d glass-white rounded-3xl overflow-hidden shadow-xl cursor-pointer" onclick="viewItem(\''+item.id+'\')">';
+                html += '<div class="relative h-48"><img src="'+item.imageUrl+'" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>';
+                html += '<div class="absolute top-4 right-4 bg-red-500 text-white px-3 py-2 rounded-full text-sm font-bold flex items-center gap-1">🔥 '+item.recentReviews+'</div></div>';
+                html += '<div class="p-6"><h3 class="text-xl font-bold mb-2">'+item.name+'</h3>'+renderStars(Math.round(item.averageRating),true,'small')+'</div></div>';
+            });
+            if(sorted.length===0) html = '<p class="col-span-full text-center text-xl">No hot takes in last 24h</p>';
+            document.getElementById('hotTakesList').innerHTML = html;
+        }
+
+        function renderTrends() {
+            const lastMonth = new Date(Date.now() - 30*24*60*60*1000);
+            const rising = items.filter(i => {
+                const recentReviews = reviews.filter(r => r.itemId === i.id && new Date(r.createdAt) > lastMonth).length;
+                return recentReviews > 0 && i.reviewCount > 0;
+            }).sort((a,b) => b.reviewCount - a.reviewCount).slice(0,5);
+            
+            let risingHtml = '';
+            rising.forEach(item => {
+                risingHtml += '<div class="flex items-center gap-4 p-4 rounded-2xl glass-white mb-3"><img src="'+item.imageUrl+'" class="w-16 h-16 rounded-xl object-cover"><div class="flex-1"><p class="font-bold">'+item.name+'</p>'+renderStars(Math.round(item.averageRating),true,'small')+'</div><span class="text-2xl">📈</span></div>';
+            });
+            document.getElementById('risingTrends').innerHTML = risingHtml || '<p class="text-center text-gray-500">No rising trends</p>';
+            
+            const falling = items.filter(i => i.reviewCount > 0).sort((a,b) => a.reviewCount - b.reviewCount).slice(0,5);
+            let fallingHtml = '';
+            falling.forEach(item => {
+                fallingHtml += '<div class="flex items-center gap-4 p-4 rounded-2xl glass-white mb-3"><img src="'+item.imageUrl+'" class="w-16 h-16 rounded-xl object-cover"><div class="flex-1"><p class="font-bold">'+item.name+'</p>'+renderStars(Math.round(item.averageRating),true,'small')+'</div><span class="text-2xl">📉</span></div>';
+            });
+            document.getElementById('fallingTrends').innerHTML = fallingHtml || '<p class="text-center text-gray-500">No falling trends</p>';
+        }
+
+        function renderFavorites() {
+            const favItems = items.filter(i => favorites.includes(i.id));
+            let html = '';
+            favItems.forEach(item => {
+                html += '<div class="card-3d glass-white rounded-3xl overflow-hidden shadow-xl cursor-pointer" onclick="viewItem(\''+item.id+'\')">';
+                html += '<div class="relative h-48"><img src="'+item.imageUrl+'" class="w-full h-full object-cover"></div>';
+                html += '<div class="p-6"><h3 class="text-xl font-bold mb-2">'+item.name+'</h3>'+renderStars(Math.round(item.averageRating),true,'small')+'</div></div>';
+            });
+            if(favItems.length===0) html = '<p class="col-span-full text-center text-xl">No favorites yet</p>';
+            document.getElementById('favoritesList').innerHTML = html;
+        }
+
+        function getSimilarItems(item) { return items.filter(i=>i.id!==item.id&&(i.category===item.category||i.tags.some(tag=>item.tags.includes(tag)))).slice(0,4); }
 
         function viewItem(itemId) {
-            const item = items.find(i => i.id === itemId);
-            if (!item) return;
+            const item=items.find(i=>i.id===itemId);
+            if(!item) return;
             item.viewCount++;
-            selectedItem = item;
+            selectedItem=item;
             document.getElementById('homePage').classList.add('hidden');
             document.getElementById('detailPage').classList.remove('hidden');
-            const itemReviews = reviews.filter(r => r.itemId === itemId);
-            const voted = hasUserVoted(currentUser.id, itemId);
-            
-            let html = '<div class="glass-white rounded-3xl shadow-2xl overflow-hidden"><div class="relative h-96">';
-            html += '<img src="' + item.imageUrl + '" alt="' + item.name + '" class="w-full h-full object-cover">';
-            html += '<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>';
-            html += '<div class="absolute bottom-10 left-10 text-white max-w-3xl"><span class="glass px-6 py-2 rounded-full text-base font-bold mb-4 inline-block">' + item.category + '</span>';
-            html += '<h1 class="text-6xl font-black mb-4 leading-tight">' + item.name + '</h1>';
-            html += '<div class="flex items-center gap-6 flex-wrap">' + renderStars(Math.round(item.averageRating), true, 'normal');
-            html += '<span class="text-2xl font-bold">' + item.reviewCount + ' ' + t('reviews') + '</span>';
-            html += '<span class="text-lg opacity-90">• ' + item.viewCount + ' ' + t('views') + '</span></div></div></div>';
-            html += '<div class="p-10"><p class="text-gray-700 text-xl mb-8 leading-relaxed">' + item.description + '</p>';
-            html += '<div class="flex flex-wrap gap-3 mb-10">';
-            item.tags.forEach(tag => { html += '<span class="badge text-base">#' + tag + '</span>'; });
-            html += '</div>';
-            
-            if (voted) {
-                html += '<div class="mb-10 p-8 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-3xl border-2 border-orange-200">';
-                html += '<div class="flex items-center gap-4"><svg class="w-12 h-12 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>';
-                html += '<div><h3 class="text-2xl font-bold text-orange-700 mb-1">' + t('alreadyVoted') + '</h3>';
-                html += '<p class="text-orange-600 font-medium">You can only vote once per item</p></div></div></div>';
+            const itemReviews=reviews.filter(r=>r.itemId===itemId), voted=hasUserVoted(currentUser.id,itemId);
+            let html='<div class="glass-white rounded-3xl shadow-2xl overflow-hidden"><div class="relative h-96"><img src="'+item.imageUrl+'" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>';
+            html+='<div class="absolute bottom-10 left-10 text-white max-w-3xl"><span class="glass px-6 py-2 rounded-full text-base font-bold mb-4 inline-block">'+item.category+'</span><h1 class="text-6xl font-black mb-4 leading-tight">'+item.name+'</h1>';
+            html+='<div class="flex items-center gap-6 flex-wrap">'+renderStars(Math.round(item.averageRating),true,'normal')+'<span class="text-2xl font-bold">'+item.reviewCount+' '+t('reviews')+'</span><span class="text-lg opacity-90">• '+item.viewCount+' '+t('views')+'</span></div></div></div>';
+            html+='<div class="p-10"><p class="text-xl mb-8 leading-relaxed">'+item.description+'</p><div class="flex flex-wrap gap-3 mb-10">';
+            item.tags.forEach(tag=>{ html+='<span class="badge text-base">#'+tag+'</span>'; });
+            html+='</div>';
+            if(voted) {
+                html+='<div class="mb-10 p-8 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-3xl border-2 border-orange-200"><div class="flex items-center gap-4"><svg class="w-12 h-12 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>';
+                html+='<div><h3 class="text-2xl font-bold text-orange-700 mb-1">'+t('alreadyVoted')+'</h3><p class="text-orange-600 font-medium">You can only vote once</p></div></div></div>';
             } else {
-                html += '<div class="border-t-2 border-purple-100 pt-10 mb-10"><h3 class="text-3xl font-black gradient-text mb-6">' + t('submitReview') + '</h3>';
-                html += '<div class="space-y-6"><div><label class="block text-lg font-bold text-gray-700 mb-3">' + t('yourRating') + '</label>';
-                html += '<div id="newRatingStars" class="flex gap-2">' + renderStars(0, false, 'large') + '</div></div>';
-                html += '<div><label class="block text-lg font-bold text-gray-700 mb-3">' + t('yourComment') + '</label>';
-                html += '<textarea id="newComment" placeholder="' + t('yourComment') + '..." rows="5" class="w-full px-6 py-4 border-2 border-purple-200 rounded-2xl focus:ring-4 focus:ring-purple-300 outline-none text-lg transition-all"></textarea></div>';
-                html += '<button onclick="submitReview(\'' + itemId + '\')" class="btn-glow gradient-bg text-white px-10 py-5 rounded-2xl font-bold shadow-2xl text-xl">' + t('submit') + '</button></div></div>';
+                html+='<div class="border-t-2 border-purple-100 pt-10 mb-10"><h3 class="text-3xl font-black gradient-text mb-6">'+t('submitReview')+'</h3><div class="space-y-6"><div><label class="block text-lg font-bold mb-3">'+t('yourRating')+'</label><div id="newRatingStars" class="flex gap-2">'+renderStars(0,false,'large')+'</div></div>';
+                html+='<div><label class="block text-lg font-bold mb-3">'+t('yourComment')+'</label><textarea id="newComment" placeholder="'+t('yourComment')+'..." rows="5" class="w-full px-6 py-4 border-2 border-purple-200 rounded-2xl focus:ring-4 focus:ring-purple-300 outline-none text-lg"></textarea></div>';
+                html+='<button onclick="submitReview(\''+itemId+'\')" class="btn-glow gradient-bg text-white px-10 py-5 rounded-2xl font-bold shadow-2xl text-xl">'+t('submit')+'</button></div></div>';
             }
-            
-            html += '<div class="border-t-2 border-purple-100 pt-10"><h3 class="text-3xl font-black gradient-text mb-6">' + t('reviews') + ' (' + itemReviews.length + ')</h3><div class="space-y-5">';
-            if (itemReviews.length > 0) {
-                itemReviews.forEach(review => {
-                    html += '<div class="glass-white rounded-2xl p-6 shadow-lg">';
-                    html += '<div class="flex items-center justify-between mb-3"><span class="font-black text-lg">' + review.userName + '</span>' + renderStars(review.rating, true, 'small') + '</div>';
-                    if (review.comment) html += '<p class="text-gray-700 leading-relaxed text-base">' + review.comment + '</p>';
-                    html += '<p class="text-xs text-gray-500 mt-3 font-semibold">' + new Date(review.createdAt).toLocaleDateString() + '</p></div>';
+            html+='<div class="border-t-2 border-purple-100 pt-10"><h3 class="text-3xl font-black gradient-text mb-6">'+t('reviews')+' ('+itemReviews.length+')</h3><div class="space-y-5">';
+            if(itemReviews.length>0) {
+                itemReviews.forEach(review=>{
+                    html+='<div class="glass-white rounded-2xl p-6 shadow-lg"><div class="flex items-center justify-between mb-3"><span class="font-black text-lg">'+review.userName+'</span>'+renderStars(review.rating,true,'small')+'</div>';
+                    if(review.comment) html+='<p class="leading-relaxed text-base">'+review.comment+'</p>';
+                    html+='<div class="flex items-center gap-4 mt-4"><button onclick="toggleReaction(\''+review.id+'\',\'helpful\')" class="reaction-btn '+(reviewReactions[currentUser.id+'-'+review.id]==='helpful'?'active':'')+'">👍 <span id="helpful-'+review.id+'">'+((reviewReactions[review.id]||{}).helpful||0)+'</span></button>';
+                    html+='<button onclick="toggleReaction(\''+review.id+'\',\'love\')" class="reaction-btn '+(reviewReactions[currentUser.id+'-'+review.id]==='love'?'active':'')+'">❤️ <span id="love-'+review.id+'">'+((reviewReactions[review.id]||{}).love||0)+'</span></button>';
+                    html+='<button onclick="toggleReaction(\''+review.id+'\',\'funny\')" class="reaction-btn '+(reviewReactions[currentUser.id+'-'+review.id]==='funny'?'active':'')+'">😂 <span id="funny-'+review.id+'">'+((reviewReactions[review.id]||{}).funny||0)+'</span></button></div>';
+                    html+='<p class="text-xs font-semibold mt-3">'+new Date(review.createdAt).toLocaleDateString()+'</p></div>';
                 });
-            } else html += '<p class="text-gray-500 text-center py-12 text-xl">' + t('noReviews') + '</p>';
-            html += '</div></div></div></div>';
-            document.getElementById('itemDetail').innerHTML = html;
-            
-            const similarItems = getSimilarItems(item);
-            if (similarItems.length > 0) {
-                let simHtml = '<h3 class="text-3xl font-black gradient-text mb-6">' + t('similarItems') + '</h3>';
-                simHtml += '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">';
-                similarItems.forEach(sim => {
-                    simHtml += '<div class="card-3d glass-white rounded-2xl overflow-hidden shadow-xl cursor-pointer" onclick="viewItem(\'' + sim.id + '\'); window.scrollTo(0,0);">';
-                    simHtml += '<div class="relative h-40 overflow-hidden"><img src="' + sim.imageUrl + '" alt="' + sim.name + '" class="w-full h-full object-cover">';
-                    simHtml += '<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div></div>';
-                    simHtml += '<div class="p-4"><h4 class="font-bold text-lg mb-2 line-clamp-1">' + sim.name + '</h4>';
-                    simHtml += '<div class="flex items-center justify-between">' + renderStars(Math.round(sim.averageRating), true, 'small');
-                    simHtml += '<span class="text-xs text-gray-500 font-semibold">' + sim.reviewCount + '</span></div></div></div>';
+            } else html+='<p class="text-center py-12 text-xl">'+t('noReviews')+'</p>';
+            html+='</div></div></div></div>';
+            document.getElementById('itemDetail').innerHTML=html;
+            const similarItems=getSimilarItems(item);
+            if(similarItems.length>0) {
+                let simHtml='<div class="glass-white rounded-3xl p-8 shadow-xl"><h3 class="text-3xl font-black gradient-text mb-6">'+t('similarItems')+'</h3><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">';
+                similarItems.forEach(sim=>{
+                    simHtml+='<div class="card-3d glass-white rounded-2xl overflow-hidden shadow-xl cursor-pointer" onclick="viewItem(\''+sim.id+'\'); window.scrollTo(0,0);"><div class="relative h-40 overflow-hidden"><img src="'+sim.imageUrl+'" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div></div>';
+                    simHtml+='<div class="p-4"><h4 class="font-bold text-lg mb-2 line-clamp-1">'+sim.name+'</h4><div class="flex items-center justify-between">'+renderStars(Math.round(sim.averageRating),true,'small')+'<span class="text-xs font-semibold">'+sim.reviewCount+'</span></div></div></div>';
                 });
-                simHtml += '</div>';
-                document.getElementById('similarItems').innerHTML = simHtml;
-            } else {
-                document.getElementById('similarItems').innerHTML = '';
-            }
+                simHtml+='</div></div>';
+                document.getElementById('similarItems').innerHTML=simHtml;
+            } else document.getElementById('similarItems').innerHTML='';
         }
 
-        function renderStars(rating, readonly, size) {
-            const sizeClass = size === 'small' ? 'w-4 h-4' : size === 'large' ? 'w-10 h-10' : 'w-6 h-6';
-            let html = '<div class="flex gap-1">';
-            for (let i = 1; i <= 5; i++) {
-                html += '<svg class="star ' + sizeClass + (readonly ? '' : ' cursor-pointer') + '" fill="' + (i <= rating ? '#fbbf24' : 'none') + '" stroke="' + (i <= rating ? '#fbbf24' : '#9ca3af') + '" viewBox="0 0 24 24" ' + (readonly ? '' : 'onclick="setRating(' + i + ')"') + '>';
-                html += '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>';
+        function toggleReaction(reviewId, type) {
+            const key = currentUser.id + '-' + reviewId;
+            if(!reviewReactions[reviewId]) reviewReactions[reviewId] = {helpful:0, love:0, funny:0};
+            if(reviewReactions[key] === type) {
+                reviewReactions[reviewId][type]--;
+                delete reviewReactions[key];
+            } else {
+                if(reviewReactions[key]) reviewReactions[reviewId][reviewReactions[key]]--;
+                reviewReactions[reviewId][type]++;
+                reviewReactions[key] = type;
             }
-            html += '</div>';
+            viewItem(selectedItem.id);
+        }
+
+        function renderStars(rating,readonly,size) {
+            const sizeClass=size==='small'?'w-4 h-4':size==='large'?'w-10 h-10':'w-6 h-6';
+            let html='<div class="flex gap-1">';
+            for(let i=1;i<=5;i++) {
+                html+='<svg class="star '+sizeClass+(readonly?'':' cursor-pointer')+'" fill="'+(i<=rating?'#fbbf24':'none')+'" stroke="'+(i<=rating?'#fbbf24':'#9ca3af')+'" viewBox="0 0 24 24" '+(readonly?'':'onclick="setRating('+i+')"')+'><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>';
+            }
+            html+='</div>';
             return html;
         }
 
-        function setRating(rating) { newRating = rating; document.getElementById('newRatingStars').innerHTML = renderStars(rating, false, 'large'); }
+        function setRating(rating) { newRating=rating; document.getElementById('newRatingStars').innerHTML=renderStars(rating,false,'large'); }
 
         function submitReview(itemId) {
-            if (hasUserVoted(currentUser.id, itemId)) { alert(t('alreadyVoted')); return; }
-            if (newRating === 0) { alert('Please give a rating!'); return; }
-            const comment = document.getElementById('newComment').value;
-            const review = { id: 'review-' + nextReviewId++, itemId: itemId, itemName: selectedItem.name, userId: currentUser.id, userName: currentUser.displayName, rating: newRating, comment: comment, createdAt: new Date().toISOString() };
+            if(hasUserVoted(currentUser.id,itemId)) { alert(t('alreadyVoted')); return; }
+            if(newRating===0) { alert('Please rate!'); return; }
+            const comment=document.getElementById('newComment').value;
+            const review={id:'review-'+nextReviewId++,itemId:itemId,itemName:selectedItem.name,userId:currentUser.id,userName:currentUser.displayName,rating:newRating,comment:comment,createdAt:new Date().toISOString()};
             reviews.push(review);
-            const item = items.find(i => i.id === itemId);
-            const newReviewCount = item.reviewCount + 1;
-            const newAverageRating = ((item.averageRating * item.reviewCount) + newRating) / newReviewCount;
-            item.reviewCount = newReviewCount;
-            item.averageRating = newAverageRating;
-            item.ratingHistory.daily.push({date: new Date().toISOString(), rating: newAverageRating});
-            item.ratingHistory.allTime.push({date: new Date().toISOString(), rating: newAverageRating});
-            markUserVoted(currentUser.id, itemId);
-            newRating = 0;
-            alert('Review ' + t('submitted') + '!');
+            const item=items.find(i=>i.id===itemId);
+            const newReviewCount=item.reviewCount+1;
+            const newAverageRating=((item.averageRating*item.reviewCount)+newRating)/newReviewCount;
+            item.reviewCount=newReviewCount; item.averageRating=newAverageRating;
+            item.ratingHistory.daily.push({date:new Date().toISOString(),rating:newAverageRating});
+            item.ratingHistory.allTime.push({date:new Date().toISOString(),rating:newAverageRating});
+            markUserVoted(currentUser.id,itemId);
+            newRating=0;
+            addNotification('Review '+t('submitted')+'!');
             viewItem(itemId);
             renderItems();
             renderTrending();
         }
 
         function renderProfile() {
-            document.getElementById('profileAvatar').textContent = currentUser.displayName[0].toUpperCase();
-            document.getElementById('profileName').textContent = currentUser.displayName;
-            document.getElementById('profileEmail').textContent = currentUser.email;
-            const userReviews = reviews.filter(r => r.userId === currentUser.id);
-            document.getElementById('profileStats').textContent = userReviews.length + ' ' + t('reviews') + ' ' + t('submitted');
-            let html = '';
-            if (userReviews.length > 0) {
-                userReviews.forEach(review => {
-                    html += '<div class="glass-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">';
-                    html += '<div class="flex items-center justify-between mb-3"><span class="font-black text-xl gradient-text">' + review.itemName + '</span>' + renderStars(review.rating, true, 'small') + '</div>';
-                    if (review.comment) html += '<p class="text-gray-700 mb-3 leading-relaxed">' + review.comment + '</p>';
-                    html += '<p class="text-xs text-gray-500 font-semibold">' + new Date(review.createdAt).toLocaleDateString() + '</p></div>';
+            document.getElementById('profileAvatar').textContent=currentUser.displayName[0].toUpperCase();
+            document.getElementById('profileName').textContent=currentUser.displayName;
+            document.getElementById('profileEmail').textContent=currentUser.email;
+            const userReviews=reviews.filter(r=>r.userId===currentUser.id);
+            const totalReviews=userReviews.length;
+            const avgRating=totalReviews>0?(userReviews.reduce((sum,r)=>sum+r.rating,0)/totalReviews).toFixed(1):0;
+            const categoryCount={};
+            userReviews.forEach(r=>{ const item=items.find(i=>i.id===r.itemId); if(item) categoryCount[item.category]=(categoryCount[item.category]||0)+1; });
+            const mostActive=Object.keys(categoryCount).sort((a,b)=>categoryCount[b]-categoryCount[a])[0]||'None';
+            document.getElementById('totalReviews').textContent=totalReviews;
+            document.getElementById('avgRating').textContent=avgRating;
+            document.getElementById('mostActiveCategory').textContent=mostActive;
+            
+            const monthlyData={};
+            userReviews.forEach(r=>{ const month=new Date(r.createdAt).toLocaleDateString('en',{month:'short'}); monthlyData[month]=(monthlyData[month]||0)+1; });
+            const ctx1=document.getElementById('activityChart').getContext('2d');
+            new Chart(ctx1,{type:'line',data:{labels:Object.keys(monthlyData),datasets:[{label:'Reviews',data:Object.values(monthlyData),borderColor:'#667eea',backgroundColor:'rgba(102,126,234,0.1)',tension:0.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false}});
+            
+            const dayHour={};
+            userReviews.forEach(r=>{ const d=new Date(r.createdAt); const day=d.getDay(); const hour=d.getHours(); const key=day+'-'+hour; dayHour[key]=(dayHour[key]||0)+1; });
+            let heatHtml='<div class="grid grid-cols-8 gap-2">';
+            ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach((dayName,dayIdx)=>{
+                heatHtml+='<div class="text-xs font-bold text-center">'+dayName+'</div>';
+                for(let h=0;h<24;h+=6) {
+                    const count=dayHour[dayIdx+'-'+h]||0;
+                    const opacity=count>0?Math.min(count/5,1):0.1;
+                    heatHtml+='<div class="h-8 rounded" style="background:rgba(102,126,234,'+opacity+')" title="'+dayName+' '+h+'h: '+count+'"></div>';
+                }
+            });
+            heatHtml+='</div>';
+            document.getElementById('activityHeatmap').innerHTML=heatHtml;
+            
+            let reviewsHtml='';
+            if(userReviews.length>0) {
+                userReviews.forEach(review=>{
+                    reviewsHtml+='<div class="glass-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all"><div class="flex items-center justify-between mb-3"><span class="font-black text-xl gradient-text">'+review.itemName+'</span>'+renderStars(review.rating,true,'small')+'</div>';
+                    if(review.comment) reviewsHtml+='<p class="leading-relaxed mb-3">'+review.comment+'</p>';
+                    reviewsHtml+='<p class="text-xs font-semibold">'+new Date(review.createdAt).toLocaleDateString()+'</p></div>';
                 });
-            } else html = '<p class="text-gray-500 text-center py-12 text-xl">' + t('noReviews') + '</p>';
-            document.getElementById('userReviews').innerHTML = html;
+            } else reviewsHtml='<p class="text-center py-12 text-xl">'+t('noReviews')+'</p>';
+            document.getElementById('userReviews').innerHTML=reviewsHtml;
         }
 
         function renderAdmin() {
-            const categorySelect = document.getElementById('newItemCategory');
-            let catHtml = '<option value="">Select Category</option>';
-            categories.forEach(cat => { catHtml += '<option value="' + cat + '">' + cat + '</option>'; });
-            categorySelect.innerHTML = catHtml;
-            let catAdminHtml = '';
-            categories.forEach(cat => {
-                catAdminHtml += '<div class="flex items-center justify-between p-4 glass-white rounded-2xl shadow-lg">';
-                catAdminHtml += '<span class="font-bold text-base">' + cat + '</span>';
-                catAdminHtml += '<button onclick="deleteCategory(\'' + cat + '\')" class="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-all">';
-                catAdminHtml += '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div>';
-            });
-            document.getElementById('categoriesAdmin').innerHTML = catAdminHtml;
-            let itemsHtml = '';
-            items.forEach(item => {
-                itemsHtml += '<div class="flex items-center gap-5 p-5 glass-white rounded-2xl shadow-lg hover:shadow-xl transition-all">';
-                itemsHtml += '<img src="' + item.imageUrl + '" alt="' + item.name + '" class="w-20 h-20 object-cover rounded-xl shadow-md">';
-                itemsHtml += '<div class="flex-1"><p class="font-black text-lg gradient-text">' + item.name + '</p><p class="text-sm text-gray-600 font-semibold">' + item.category + '</p></div>';
-                itemsHtml += '<div class="flex items-center gap-3">' + renderStars(Math.round(item.averageRating), true, 'small');
-                itemsHtml += '<span class="text-sm text-gray-600 font-bold">(' + item.reviewCount + ')</span>';
-                itemsHtml += '<button onclick="deleteItem(\'' + item.id + '\')" class="text-red-500 hover:text-red-700 p-3 rounded-lg hover:bg-red-50 transition-all">';
-                itemsHtml += '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div></div>';
-            });
-            document.getElementById('allItemsList').innerHTML = itemsHtml;
-            let usersHtml = '';
-            if (users.length > 0) {
-                users.forEach(u => {
-                    usersHtml += '<div class="glass-white rounded-2xl p-6 shadow-lg"><div class="flex items-center gap-4">';
-                    usersHtml += '<div class="avatar w-16 h-16 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg">' + u.displayName[0].toUpperCase() + '</div>';
-                    usersHtml += '<div><p class="font-black text-lg gradient-text">' + u.displayName + '</p><p class="text-sm text-gray-600 font-semibold">' + u.email + '</p></div></div></div>';
-                });
-            } else usersHtml = '<p class="text-gray-500 text-center py-12 col-span-full text-xl">No registered users yet.</p>';
-            document.getElementById('allUsersList').innerHTML = usersHtml;
+            const categorySelect=document.getElementById('newItemCategory');
+            let catHtml='<option value="">Select</option>';
+            categories.forEach(cat=>{ catHtml+='<option value="'+cat+'">'+cat+'</option>'; });
+            categorySelect.innerHTML=catHtml;
+            let catAdminHtml='';
+            categories.forEach(cat=>{ catAdminHtml+='<div class="flex items-center justify-between p-4 glass-white rounded-2xl shadow-lg"><span class="font-bold text-base">'+cat+'</span><button onclick="deleteCategory(\''+cat+'\')" class="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div>'; });
+            document.getElementById('categoriesAdmin').innerHTML=catAdminHtml;
+            let itemsHtml='';
+            items.forEach(item=>{ itemsHtml+='<div class="flex items-center gap-5 p-5 glass-white rounded-2xl shadow-lg hover:shadow-xl transition-all"><img src="'+item.imageUrl+'" class="w-20 h-20 object-cover rounded-xl shadow-md"><div class="flex-1"><p class="font-black text-lg gradient-text">'+item.name+'</p><p class="text-sm font-semibold">'+item.category+'</p></div><div class="flex items-center gap-3">'+renderStars(Math.round(item.averageRating),true,'small')+'<span class="text-sm font-bold">('+item.reviewCount+')</span><button onclick="deleteItem(\''+item.id+'\')" class="text-red-500 hover:text-red-700 p-3 rounded-lg hover:bg-red-50 transition-all"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button></div></div>'; });
+            document.getElementById('allItemsList').innerHTML=itemsHtml;
+            let usersHtml='';
+            if(users.length>0) { users.forEach(u=>{ usersHtml+='<div class="glass-white rounded-2xl p-6 shadow-lg"><div class="flex items-center gap-4"><div class="w-16 h-16 gradient-bg rounded-full flex items-center justify-center text-white font-black text-2xl shadow-lg">'+u.displayName[0].toUpperCase()+'</div><div><p class="font-black text-lg gradient-text">'+u.displayName+'</p><p class="text-sm font-semibold">'+u.email+'</p></div></div></div>'; }); } else usersHtml='<p class="text-center py-12 col-span-full text-xl">No users</p>';
+            document.getElementById('allUsersList').innerHTML=usersHtml;
         }
 
         function addItem() {
-            const name = document.getElementById('newItemName').value;
-            const category = document.getElementById('newItemCategory').value;
-            const imageUrl = document.getElementById('newItemImage').value;
-            const description = document.getElementById('newItemDesc').value;
-            const tags = document.getElementById('newItemTags').value.split(',').map(t => t.trim()).filter(t => t);
-            if (!name || !category || !imageUrl || !description) { alert('Please fill all fields!'); return; }
-            items.push({ id: 'item-' + nextItemId++, name: name, category: category, description: description, imageUrl: imageUrl, tags: tags, averageRating: 0, reviewCount: 0, viewCount: 0, ratingHistory: {daily: [], weekly: [], monthly: [], yearly: [], allTime: []}, createdAt: new Date().toISOString() });
-            document.getElementById('newItemName').value = '';
-            document.getElementById('newItemImage').value = '';
-            document.getElementById('newItemDesc').value = '';
-            document.getElementById('newItemTags').value = '';
-            alert('Item added successfully!');
-            renderAdmin();
-            renderItems();
+            const name=document.getElementById('newItemName').value, category=document.getElementById('newItemCategory').value, imageUrl=document.getElementById('newItemImage').value, description=document.getElementById('newItemDesc').value, tags=document.getElementById('newItemTags').value.split(',').map(t=>t.trim()).filter(t=>t);
+            if(!name||!category||!imageUrl||!description) { alert('Fill all!'); return; }
+            items.push({id:'item-'+nextItemId++,name:name,category:category,description:description,imageUrl:imageUrl,tags:tags,averageRating:0,reviewCount:0,viewCount:0,ratingHistory:{daily:[],weekly:[],monthly:[],yearly:[],allTime:[]},createdAt:new Date().toISOString()});
+            document.getElementById('newItemName').value=''; document.getElementById('newItemImage').value=''; document.getElementById('newItemDesc').value=''; document.getElementById('newItemTags').value='';
+            alert('Added!'); renderAdmin(); renderItems();
         }
-
-        function deleteItem(itemId) { if (!confirm('Are you sure?')) return; const index = items.findIndex(i => i.id === itemId); if (index > -1) items.splice(index, 1); renderAdmin(); renderItems(); renderTrending(); }
-        function addCategory() { const name = document.getElementById('newCategoryName').value.trim(); if (!name) return; if (categories.includes(name)) { alert('Category already exists!'); return; } categories.push(name); document.getElementById('newCategoryName').value = ''; alert('Category added!'); renderCategories(); renderAdmin(); }
-        function deleteCategory(name) { if (!confirm('Are you sure?')) return; const index = categories.indexOf(name); if (index > -1) categories.splice(index, 1); renderCategories(); renderAdmin(); }
+        function deleteItem(itemId) { if(!confirm('Sure?')) return; const idx=items.findIndex(i=>i.id===itemId); if(idx>-1) items.splice(idx,1); renderAdmin(); renderItems(); renderTrending(); }
+        function addCategory() { const name=document.getElementById('newCategoryName').value.trim(); if(!name) return; if(categories.includes(name)) { alert('Exists!'); return; } categories.push(name); document.getElementById('newCategoryName').value=''; alert('Added!'); renderCategories(); renderAdmin(); }
+        function deleteCategory(name) { if(!confirm('Sure?')) return; const idx=categories.indexOf(name); if(idx>-1) categories.splice(idx,1); renderCategories(); renderAdmin(); }
         function toggleSidebar() { document.getElementById('leftSidebar').classList.toggle('-translate-x-full'); }
     </script>
 </body>
