@@ -4,63 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tactical Command - Multiplayer RTS</title>
-    <link rel="stylesheet" href="css/main.css">
-    
-    <!-- Firebase SDK -->
+    <link rel="stylesheet" href="main.css">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-    <!-- Loading Screen -->
     <div id="loadingScreen" class="screen active">
         <div class="loading-content">
             <h1>⚔️ TACTICAL COMMAND</h1>
-            <div class="loading-bar-container">
-                <div id="loadingBar" class="loading-bar"></div>
-            </div>
+            <div class="loading-bar-container"><div id="loadingBar" class="loading-bar"></div></div>
             <p id="loadingText">Yükleniyor...</p>
         </div>
     </div>
     
-    <!-- Menu Screen -->
     <div id="menuScreen" class="screen">
         <div class="menu-content">
             <h1>⚔️ TACTICAL COMMAND</h1>
             <p class="subtitle">Multiplayer Strateji Oyunu</p>
-            
             <div class="menu-section">
                 <h3>Oyuncu Bilgileri</h3>
                 <input type="text" id="playerNameInput" placeholder="İsminiz" maxlength="20" oninput="Multiplayer.checkCanProceed()">
-                
                 <h3>Ülke Seçin</h3>
                 <div id="countryGrid" class="country-grid"></div>
                 <div id="selectedCountryPreview" class="country-preview">Ülke seçilmedi</div>
             </div>
-            
             <div class="menu-section">
                 <h3>Tek Oyunculu</h3>
                 <button onclick="Game.startSinglePlayer(512)" class="menu-btn primary">🎮 Hızlı Oyun</button>
             </div>
-            
             <div class="menu-section">
                 <h3>Çok Oyunculu</h3>
                 <div class="multiplayer-options">
-                    <div class="option-group">
-                        <label>Harita:</label>
-                        <select id="mapSizeSelect">
-                            <option value="256">Küçük</option>
-                            <option value="512" selected>Orta</option>
-                            <option value="1024">Büyük</option>
-                        </select>
+                    <div class="option-group"><label>Harita:</label>
+                        <select id="mapSizeSelect"><option value="256">Küçük</option><option value="512" selected>Orta</option><option value="1024">Büyük</option></select>
                     </div>
-                    <div class="option-group">
-                        <label>Oyuncu:</label>
-                        <select id="maxPlayersSelect">
-                            <option value="2">2</option>
-                            <option value="4">4</option>
-                            <option value="8" selected>8</option>
-                        </select>
+                    <div class="option-group"><label>Oyuncu:</label>
+                        <select id="maxPlayersSelect"><option value="2">2</option><option value="4">4</option><option value="8" selected>8</option></select>
                     </div>
                 </div>
                 <button id="createServerBtn" class="menu-btn" disabled>🌐 Server Oluştur</button>
@@ -72,17 +52,13 @@
         </div>
     </div>
     
-    <!-- Lobby Screen -->
     <div id="lobbyScreen" class="screen">
         <div class="lobby-content">
             <h2>🎯 LOBİ</h2>
             <div class="server-code">Kod: <span id="lobbyServerCode">------</span>
                 <button onclick="navigator.clipboard.writeText(document.getElementById('lobbyServerCode').textContent)">📋</button>
             </div>
-            <div class="lobby-players">
-                <h3>Oyuncular (<span id="lobbyPlayerCount">0/8</span>)</h3>
-                <div id="lobbyPlayersList"></div>
-            </div>
+            <div class="lobby-players"><h3>Oyuncular (<span id="lobbyPlayerCount">0/8</span>)</h3><div id="lobbyPlayersList"></div></div>
             <div class="lobby-actions">
                 <button id="readyBtn" class="menu-btn">✓ Hazırım</button>
                 <button id="startGameBtn" class="menu-btn primary" style="display:none">🚀 Başlat</button>
@@ -91,11 +67,9 @@
         </div>
     </div>
     
-    <!-- Game Screen -->
     <div id="gameScreen" class="screen">
         <div id="gameContainer">
             <canvas id="gameCanvas"></canvas>
-            
             <div id="topBar">
                 <div id="resourceDisplay"></div>
                 <div id="gameActions">
@@ -105,56 +79,39 @@
                     <span id="territoryCount">0</span> bölge
                 </div>
             </div>
-            
-            <div id="leftPanel">
-                <h3>🏗️ İnşaat</h3>
-                <div id="buildButtons"></div>
-            </div>
-            
-            <div id="rightPanel">
-                <div id="selectionPanel"></div>
-            </div>
-            
-            <div id="minimapContainer">
-                <canvas id="minimap" width="200" height="140"></canvas>
-            </div>
-            
+            <div id="leftPanel"><h3>🏗️ İnşaat</h3><div id="buildButtons"></div></div>
+            <div id="rightPanel"><div id="selectionPanel"></div></div>
+            <div id="minimapContainer"><canvas id="minimap" width="200" height="140"></canvas></div>
             <div id="stockMarketPanel" class="overlay-panel" style="display:none">
                 <div class="panel-header"><h3>📈 BORSA</h3><button id="closeMarketBtn">✕</button></div>
                 <div id="stockList" class="stock-list"></div>
             </div>
-            
             <div id="chatPanel" class="overlay-panel" style="display:none">
                 <div class="panel-header"><h3>💬 CHAT</h3><button onclick="UI.toggleChat()">✕</button></div>
                 <div id="chatMessages" class="chat-messages"></div>
-                <div class="chat-input-row">
-                    <input type="text" id="chatInput" placeholder="Mesaj (@isim özel)">
-                    <button id="sendChatBtn">Gönder</button>
-                </div>
+                <div class="chat-input-row"><input type="text" id="chatInput" placeholder="Mesaj (@isim özel)"><button id="sendChatBtn">Gönder</button></div>
             </div>
-            
             <div id="sendResourcePanel" class="overlay-panel" style="display:none">
                 <div class="panel-header"><h3>📦 KAYNAK GÖNDER</h3><button onclick="UI.toggleSendResource()">✕</button></div>
                 <div id="sendResourceContent"></div>
             </div>
-            
             <div id="notifications"></div>
         </div>
     </div>
-    
-    <script src="js/modules/utils.js"></script>
-    <script src="js/modules/config.js"></script>
-    <script src="js/modules/firebase.js"></script>
-    <script src="js/modules/multiplayer.js"></script>
-    <script src="js/modules/economy.js"></script>
-    <script src="js/modules/resources.js"></script>
-    <script src="js/modules/map.js"></script>
-    <script src="js/modules/combat.js"></script>
-    <script src="js/modules/entities.js"></script>
-    <script src="js/modules/renderer.js"></script>
-    <script src="js/modules/ui.js"></script>
-    <script src="js/modules/ai.js"></script>
-    <script src="js/modules/input.js"></script>
-    <script src="js/game.js"></script>
+
+    <script src="utils.js"></script>
+    <script src="config.js"></script>
+    <script src="firebase.js"></script>
+    <script src="multiplayer.js"></script>
+    <script src="economy.js"></script>
+    <script src="resources.js"></script>
+    <script src="map.js"></script>
+    <script src="combat.js"></script>
+    <script src="entities.js"></script>
+    <script src="renderer.js"></script>
+    <script src="ui.js"></script>
+    <script src="ai.js"></script>
+    <script src="input.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
