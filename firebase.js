@@ -1,18 +1,8 @@
-const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCbolraCD1nrOqcIE5GHPAaX9SRhHQXYIY",
-    authDomain: "videoanlyze.firebaseapp.com",
-    projectId: "videoanlyze",
-    storageBucket: "videoanlyze.firebasestorage.app",
-    messagingSenderId: "1053069335615",
-    appId: "1:1053069335615:web:5dbf8f2345a5bf18b1ac8a"
-};
-
 const FirebaseModule = {
     app: null,
     db: null,
     auth: null,
     userId: null,
-    currentUser: null,
     serverCode: null,
     unsubscribers: [],
     
@@ -22,8 +12,16 @@ const FirebaseModule = {
             return false;
         }
         try {
+            const config = {
+                apiKey: "AIzaSyCbolraCD1nrOqcIE5GHPAaX9SRhHQXYIY",
+                authDomain: "videoanlyze.firebaseapp.com",
+                projectId: "videoanlyze",
+                storageBucket: "videoanlyze.firebasestorage.app",
+                messagingSenderId: "1053069335615",
+                appId: "1:1053069335615:web:5dbf8f2345a5bf18b1ac8a"
+            };
             if (!firebase.apps.length) {
-                this.app = firebase.initializeApp(FIREBASE_CONFIG);
+                this.app = firebase.initializeApp(config);
             } else {
                 this.app = firebase.apps[0];
             }
@@ -31,7 +29,6 @@ const FirebaseModule = {
             this.auth = firebase.auth();
             const cred = await this.auth.signInAnonymously();
             this.userId = cred.user.uid;
-            this.currentUser = cred.user;
             console.log('Firebase initialized, userId:', this.userId);
             return true;
         } catch (err) {
@@ -100,7 +97,7 @@ const FirebaseModule = {
         return unsub;
     },
     
-    async sendMessage(message, isPrivate = false, targetId = null, targetName = null) {
+    async sendMessage(message, isPrivate, targetId, targetName) {
         if (!this.serverCode) return;
         await this.db.collection('servers').doc(this.serverCode).collection('messages').add({
             senderId: this.userId,
@@ -140,28 +137,6 @@ const FirebaseModule = {
         return true;
     },
     
-    async saveGameState(state) {
-        if (!this.serverCode) return;
-        await this.db.collection('servers').doc(this.serverCode).update({ gameState: state });
-    },
-    
-    async sendResources(targetId, resourceType, amount) {
-        if (!this.serverCode) return { success: false };
-        const serverRef = this.db.collection('servers').doc(this.serverCode);
-        return this.db.runTransaction(async (transaction) => {
-            const doc = await transaction.get(serverRef);
-            const gameState = doc.data().gameState;
-            const sender = gameState.players[this.userId];
-            const receiver = gameState.players[targetId];
-            if (!sender || !receiver) return { success: false, error: 'Oyuncu bulunamadı' };
-            if ((sender.resources[resourceType] || 0) < amount) return { success: false, error: 'Yetersiz kaynak' };
-            sender.resources[resourceType] -= amount;
-            receiver.resources[resourceType] = (receiver.resources[resourceType] || 0) + amount;
-            transaction.update(serverRef, { gameState });
-            return { success: true };
-        });
-    },
-    
     async leaveServer() {
         if (!this.serverCode) return;
         this.unsubscribers.forEach(unsub => unsub());
@@ -178,4 +153,4 @@ const FirebaseModule = {
     }
 };
 
-if (typeof window !== 'undefined') window.FirebaseModule = FirebaseModule;
+window.FirebaseModule = FirebaseModule;
