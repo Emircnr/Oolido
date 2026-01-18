@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tactical Command - Multiplayer RTS</title>
+    <link rel="stylesheet" href="main.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <div id="loadingScreen" class="screen active">
+        <div class="loading-content">
+            <h1>⚔️ TACTICAL COMMAND</h1>
+            <div class="loading-bar-container"><div id="loadingBar" class="loading-bar"></div></div>
+            <p id="loadingText">Yükleniyor...</p>
+        </div>
+    </div>
+    
+    <div id="menuScreen" class="screen">
+        <div class="menu-content">
+            <h1>⚔️ TACTICAL COMMAND</h1>
+            <p class="subtitle">Multiplayer Strateji Oyunu</p>
+            <div class="menu-section">
+                <h3>Oyuncu Bilgileri</h3>
+                <input type="text" id="playerNameInput" placeholder="İsminiz" maxlength="20" oninput="Multiplayer.checkCanProceed()">
+                <h3>Ülke Seçin</h3>
+                <div id="countryGrid" class="country-grid"></div>
+                <div id="selectedCountryPreview" class="country-preview">Ülke seçilmedi</div>
+            </div>
+            <div class="menu-section">
+                <h3>Tek Oyunculu</h3>
+                <button onclick="Game.startSinglePlayer(512)" class="menu-btn primary">🎮 Hızlı Oyun</button>
+            </div>
+            <div class="menu-section">
+                <h3>Çok Oyunculu</h3>
+                <button id="createServerBtn" class="menu-btn" disabled>🌐 Server Oluştur</button>
+                <div class="join-section">
+                    <input type="text" id="serverCodeInput" placeholder="Kod" maxlength="6" oninput="Multiplayer.checkCanProceed()">
+                    <button id="joinServerBtn" class="menu-btn" disabled>🔗 Katıl</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="lobbyScreen" class="screen">
+        <div class="lobby-content">
+            <h2>🎯 LOBİ</h2>
+            <div class="server-code">Kod: <span id="lobbyServerCode">------</span>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('lobbyServerCode').textContent)">📋</button>
+            </div>
+            <div class="lobby-players"><h3>Oyuncular (<span id="lobbyPlayerCount">0/8</span>)</h3><div id="lobbyPlayersList"></div></div>
+            <div class="lobby-actions">
+                <button id="readyBtn" class="menu-btn">✓ Hazırım</button>
+                <button id="startGameBtn" class="menu-btn primary" style="display:none">🚀 Başlat</button>
+                <button id="leaveServerBtn" class="menu-btn danger">🚪 Ayrıl</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="gameScreen" class="screen">
+        <div id="gameContainer">
+            <canvas id="gameCanvas"></canvas>
+            <div id="topBar">
+                <div id="resourceDisplay"></div>
+                <div id="gameActions">
+                    <button id="stockMarketBtn" class="action-btn">📈 Borsa</button>
+                    <button id="chatBtn" class="action-btn">💬 Chat</button>
+                    <span id="territoryCount">0</span> bölge
+                </div>
+            </div>
+            <div id="leftPanel"><h3>🏗️ İnşaat</h3><div id="buildButtons"></div></div>
+            <div id="rightPanel"><div id="selectionPanel"></div></div>
+            <div id="minimapContainer"><canvas id="minimap" width="200" height="140"></canvas></div>
+            <div id="stockMarketPanel" class="overlay-panel" style="display:none">
+                <div class="panel-header"><h3>📈 BORSA</h3><button id="closeMarketBtn">✕</button></div>
+                <div id="stockList" class="stock-list"></div>
+            </div>
+            <div id="chatPanel" class="overlay-panel" style="display:none">
+                <div class="panel-header"><h3>💬 CHAT</h3><button onclick="UI.toggleChat()">✕</button></div>
+                <div id="chatMessages" class="chat-messages"></div>
+            </div>
+            <div id="notifications"></div>
+        </div>
+    </div>
+
+    <script src="utils.js"></script>
+    <script src="config.js"></script>
+    <script src="firebase.js"></script>
+    <script src="combat.js"></script>
+    <script src="economy.js"></script>
+    <script src="resources.js"></script>
+    <script src="map.js"></script>
+    <script src="entities.js"></script>
+    <script src="renderer.js"></script>
+    <script src="ui.js"></script>
+    <script src="ai.js"></script>
+    <script src="input.js"></script>
+    <script src="multiplayer.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
