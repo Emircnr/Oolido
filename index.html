@@ -1,947 +1,896 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { 
-  getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, 
-  arrayUnion, increment 
-} from 'firebase/firestore';
-import { 
-  Zap, ShoppingCart, Handshake
-} from 'lucide-react';
-
-// --- FIREBASE SETUP ---
-const getFirebaseConfig = () => {
-  try {
-    if (typeof __firebase_config !== 'undefined') {
-      return JSON.parse(__firebase_config);
-    }
-  } catch (e) {
-    console.warn("Sistem config bulunamadı, fallback kullanılıyor.");
-  }
-  return {
-    apiKey: "AIzaSyCbolraCD1nrOqcIE5GHPAaX9SRhHQXYIY",
-    authDomain: "videoanlyze.firebaseapp.com",
-    projectId: "videoanlyze",
-    storageBucket: "videoanlyze.firebasestorage.app",
-    messagingSenderId: "1053069335615",
-    appId: "1:1053069335615:web:5dbf8f2345a5bf18b1ac8a",
-    measurementId: "G-TLEWYXX05H"
-  };
-};
-
-const app = initializeApp(getFirebaseConfig());
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'videoanlyze';
-
-// --- GAME CONSTANTS & DATA ---
-const MAP_SIZE = 32;
-const COUNTRIES = [
-  { code: 'TR', name: 'Türkiye', flag: '🇹🇷', color: 'bg-red-600' },
-  { code: 'US', name: 'ABD', flag: '🇺🇸', color: 'bg-blue-600' },
-  { code: 'RU', name: 'Rusya', flag: '🇷🇺', color: 'bg-red-800' },
-  { code: 'CN', name: 'Çin', flag: '🇨🇳', color: 'bg-yellow-600' },
-  { code: 'DE', name: 'Almanya', flag: '🇩🇪', color: 'bg-gray-800' },
-  { code: 'GB', name: 'İngiltere', flag: '🇬🇧', color: 'bg-blue-800' },
-  { code: 'FR', name: 'Fransa', flag: '🇫🇷', color: 'bg-blue-500' },
-  { code: 'JP', name: 'Japonya', flag: '🇯🇵', color: 'bg-red-400' },
-  { code: 'KR', name: 'Güney Kore', flag: '🇰🇷', color: 'bg-blue-400' },
-  { code: 'BR', name: 'Brezilya', flag: '🇧🇷', color: 'bg-green-600' },
-];
-
-const BUILDINGS = {
-  HQ: { id: 'HQ', name: 'Karargah', icon: '🏛️', cost: { oil: 0, wheat: 0, dollar: 0 } },
-  BARRACKS: { id: 'BARRACKS', name: 'Kışla', icon: '🏠', cost: { oil: 200, wheat: 100, dollar: 300 } },
-  TOWER: { id: 'TOWER', name: 'Savunma Kulesi', icon: '🗼', cost: { oil: 150, wheat: 50, dollar: 200 }, range: 3, damage: 20 },
-  RADAR: { id: 'RADAR', name: 'Radar', icon: '📡', cost: { oil: 100, wheat: 0, dollar: 500 }, range: 8 },
-  HOSPITAL: { id: 'HOSPITAL', name: 'Hastane', icon: '🏥', cost: { oil: 100, wheat: 300, dollar: 200 }, range: 2 },
-};
-
-const UNITS = {
-  INFANTRY: { id: 'INFANTRY', name: 'Piyade', icon: '🔫', cost: { oil: 50, wheat: 50, dollar: 50 }, hp: 100, damage: 15, range: 2, moveCost: 10, ammoCost: 10 },
-  HEAVY: { id: 'HEAVY', name: 'Ağır Piyade', icon: '💪', cost: { oil: 150, wheat: 100, dollar: 100 }, hp: 250, damage: 25, range: 1, moveCost: 20, ammoCost: 20 },
-  SNIPER: { id: 'SNIPER', name: 'Keskin Nişancı', icon: '🎯', cost: { oil: 50, wheat: 100, dollar: 200 }, hp: 60, damage: 60, range: 5, moveCost: 15, ammoCost: 30 },
-  SCOUT: { id: 'SCOUT', name: 'Keşifçi', icon: '🏃', cost: { oil: 100, wheat: 50, dollar: 50 }, hp: 80, damage: 5, range: 3, moveCost: 5, ammoCost: 5 },
-};
-
-const RESOURCES = {
-  OIL: { id: 'oil', name: 'Petrol', icon: '🛢️', color: 'text-gray-900' },
-  WHEAT: { id: 'wheat', name: 'Buğday', icon: '🌾', color: 'text-yellow-600' },
-  DOLLAR: { id: 'dollar', name: 'Dolar', icon: '💵', color: 'text-green-600' },
-  AMMO: { id: 'ammo', name: 'Mühimmat', icon: '🔹', color: 'text-blue-600' },
-  MOVE: { id: 'move', name: 'Hareket', icon: '👟', color: 'text-orange-600' },
-};
-
-// --- HELPER FUNCTIONS ---
-const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
-const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-// --- MAIN COMPONENT ---
-export default function TaktikKomuta() {
-  const [user, setUser] = useState(null);
-  const [gameState, setGameState] = useState('menu'); // menu, lobby, game
-  const [gameCode, setGameCode] = useState('');
-  const [gameData, setGameData] = useState(null);
-  const [myPlayer, setMyPlayer] = useState(null);
-  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
-  const [selectedTile, setSelectedTile] = useState(null);
-  const [notification, setNotification] = useState(null);
-  const [marketOffers, setMarketOffers] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // Refs for intervals to access latest state without resetting interval
-  const gameDataRef = useRef(null);
-  const myPlayerRef = useRef(null);
-  const userRef = useRef(null);
-
-  useEffect(() => {
-    gameDataRef.current = gameData;
-  }, [gameData]);
-
-  useEffect(() => {
-    myPlayerRef.current = myPlayer;
-  }, [myPlayer]);
-
-  useEffect(() => {
-    userRef.current = user;
-  }, [user]);
-
-  // Auth Handling
-  useEffect(() => {
-    const initAuth = async () => {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        await signInAnonymously(auth);
-      }
-    };
-    initAuth();
-    return onAuthStateChanged(auth, setUser);
-  }, []);
-
-  // Game Data Listener
-  useEffect(() => {
-    if (!user || !gameCode || gameState === 'menu') return;
-
-    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`);
-    const unsubscribe = onSnapshot(gameRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setGameData(data);
-        if (data.players && data.players[user.uid]) {
-          setMyPlayer(data.players[user.uid]);
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taktik Komuta - RTS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Özel Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1a202c; }
+        ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #718096; }
+        
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(32, 60px);
+            gap: 1px;
+            background-color: #2d3748;
+            border: 4px solid #4a5568;
         }
-        if (data.market) setMarketOffers(data.market);
-      } else {
-        showNotification("Oyun bulunamadı veya sonlandı.");
-        setGameState('menu');
-      }
-    });
-    return () => unsubscribe();
-  }, [user, gameCode, gameState]);
+        .tile {
+            width: 60px; height: 60px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s;
+        }
+        .tile:hover { opacity: 0.8; z-index: 5; transform: scale(1.05); border: 1px solid white; }
+        .selected { box-shadow: 0 0 0 4px #ecc94b; z-index: 10; transform: scale(1.05); }
+        
+        .hp-bar {
+            position: absolute; bottom: 2px; left: 2px; right: 2px;
+            height: 4px; background: #4a5568; border-radius: 2px; overflow: hidden;
+        }
+        .hp-fill { height: 100%; background: #48bb78; }
+        
+        /* Animasyonlar */
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .animate-bounce-custom { animation: bounce 1s infinite; }
+        
+        .modal { background: rgba(0,0,0,0.8); }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans h-screen flex flex-col overflow-hidden">
 
-  // Resource Production Loop
-  // Fixed: Uses refs to avoid resetting the interval on every state change
-  useEffect(() => {
-    if (gameState !== 'game') return;
+    <!-- Notification Toast -->
+    <div id="notification" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-6 py-2 rounded-lg shadow-xl z-50 font-bold pointer-events-none transition-opacity duration-300"></div>
 
-    const interval = setInterval(async () => {
-      const gData = gameDataRef.current;
-      const mPlayer = myPlayerRef.current;
-      const cUser = userRef.current;
+    <!-- App Container -->
+    <div id="app" class="w-full h-full">
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="flex items-center justify-center h-full">
+            <div class="text-2xl animate-pulse">Sunucuya Bağlanılıyor...</div>
+        </div>
 
-      if (!gData || !mPlayer || !cUser) return;
+        <!-- Menu Screen -->
+        <div id="menu-screen" class="hidden flex flex-col items-center justify-center h-full space-y-8 bg-gray-800 bg-cover bg-blend-multiply" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80');">
+            <h1 class="text-6xl font-black text-yellow-500 tracking-tighter uppercase drop-shadow-lg text-center">Taktik<br>Komuta</h1>
+            <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 w-96 opacity-95">
+                <h2 class="text-xl mb-4 font-bold text-center">Ülkeni Seç</h2>
+                <div id="country-list" class="grid grid-cols-5 gap-2 mb-6"></div>
+                <div id="selected-country-name" class="text-center mb-6 text-yellow-400 font-bold"></div>
+                
+                <div class="flex flex-col gap-4">
+                    <button id="btn-create-game" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 transition">
+                        ⚡ Yeni Operasyon
+                    </button>
+                    <div class="flex gap-2">
+                        <input id="input-game-code" type="text" placeholder="KOD" maxlength="6" class="bg-gray-700 text-white px-4 rounded-lg w-full uppercase tracking-widest text-center font-mono">
+                        <button id="btn-join-game" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition">Katıl</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-      let oilIncome = 0;
-      let wheatIncome = 0;
-      let dollarIncome = 0;
+        <!-- Lobby Screen -->
+        <div id="lobby-screen" class="hidden flex flex-col items-center justify-center h-full bg-gray-800">
+            <div class="bg-gray-700 p-8 rounded-2xl w-full max-w-2xl shadow-2xl">
+                <h2 class="text-3xl font-bold text-center mb-2">Operasyon Odası</h2>
+                <div id="lobby-code-display" class="text-center text-4xl font-mono text-yellow-400 tracking-[0.5em] mb-8 bg-black/30 py-4 rounded-lg cursor-pointer hover:bg-black/50 transition" title="Kodu Kopyala"></div>
+                
+                <div id="lobby-player-list" class="space-y-2 mb-8 max-h-64 overflow-y-auto"></div>
 
-      // Scan map for owned mines
-      gData.map.forEach(row => {
-        row.forEach(tile => {
-            if (tile.owner === cUser.uid && (tile.structureType === 'MINE' || tile.structureType === 'MINE_WILD')) {
-                // If the player captured a MINE_WILD, we consider it a MINE for production
-                if (tile.resourceType === 'oil') oilIncome += tile.production || 10;
-                if (tile.resourceType === 'wheat') wheatIncome += tile.production || 10;
-                if (tile.resourceType === 'dollar') dollarIncome += tile.production || 10;
+                <div id="lobby-host-controls" class="hidden">
+                    <button id="btn-start-game" class="w-full bg-green-600 hover:bg-green-500 py-4 rounded-lg font-bold text-xl transition">OPERASYONU BAŞLAT</button>
+                </div>
+                <div id="lobby-waiting-msg" class="text-center text-gray-400 animate-pulse hidden">Komutanın başlatması bekleniyor...</div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden flex h-full">
+            <!-- Sidebar -->
+            <div class="w-80 bg-gray-800 border-r border-gray-700 flex flex-col z-20 shadow-xl shrink-0">
+                <!-- Player Info -->
+                <div class="p-4 bg-gray-900 border-b border-gray-700">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span id="p-flag" class="text-4xl"></span>
+                        <div>
+                            <h3 id="p-name" class="font-bold text-lg leading-none"></h3>
+                            <span id="p-id" class="text-xs text-gray-400"></span>
+                        </div>
+                    </div>
+                    <!-- Resources -->
+                    <div id="resource-list" class="grid grid-cols-2 gap-2 mt-4 text-sm"></div>
+                    <!-- Quick Actions -->
+                    <div class="flex gap-2 mt-2">
+                        <button id="btn-buy-ammo" class="flex-1 bg-blue-900/50 hover:bg-blue-800 text-xs py-1 px-1 rounded border border-blue-700 flex flex-col items-center justify-center gap-1 transition">
+                            <span>+50 🔹</span> <span class="text-[10px] opacity-70">50🛢️ 50🌾</span>
+                        </button>
+                        <button id="btn-buy-move" class="flex-1 bg-orange-900/50 hover:bg-orange-800 text-xs py-1 px-1 rounded border border-orange-700 flex flex-col items-center justify-center gap-1 transition">
+                            <span>+50 👟</span> <span class="text-[10px] opacity-70">50🛢️ 50💵</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Selection Info -->
+                <div id="selection-panel" class="flex-1 p-4 overflow-y-auto bg-gray-800">
+                    <div id="no-selection" class="text-gray-500 text-center text-sm italic mt-10">Haritadan bir kare seçin...</div>
+                    <div id="selection-content" class="hidden animate-bounce-custom-stop">
+                        <h4 id="sel-title" class="text-yellow-400 font-bold uppercase text-xs tracking-wider mb-2"></h4>
+                        <div class="bg-gray-700 p-3 rounded-lg mb-4 text-sm">
+                            <div id="sel-owner" class="mb-2"></div>
+                            <div id="sel-structure" class="hidden border-t border-gray-600 pt-2 mt-1"></div>
+                            <div id="sel-unit" class="hidden border-t border-gray-600 pt-2 mt-1"></div>
+                        </div>
+
+                        <!-- Action Buttons Container -->
+                        <div id="sel-actions" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- Market -->
+                <div class="p-2 border-t border-gray-700 bg-gray-900 h-48 overflow-y-auto flex flex-col">
+                    <h4 class="text-xs font-bold text-gray-400 mb-2 flex items-center gap-1">🛒 KARABORSA</h4>
+                    <div class="flex gap-1 mb-2">
+                        <select id="market-res" class="bg-gray-700 text-xs rounded w-16 px-1"><option value="OIL">Petrol</option><option value="WHEAT">Buğday</option></select>
+                        <input id="market-amt" type="number" value="100" class="bg-gray-700 text-xs w-12 rounded pl-1">
+                        <input id="market-price" type="number" value="200" class="bg-gray-700 text-xs w-12 rounded pl-1">
+                        <button id="btn-post-offer" class="bg-green-700 hover:bg-green-600 text-xs px-2 rounded font-bold">+</button>
+                    </div>
+                    <div id="market-list" class="space-y-1 flex-1 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- Map Area -->
+            <div id="map-container" class="flex-1 overflow-auto bg-black relative cursor-move" style="background-image: radial-gradient(#333 1px, transparent 1px); background-size: 20px 20px;">
+                <div class="p-10 min-w-max min-h-max">
+                    <div id="game-map" class="map-grid shadow-2xl"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, 
+            arrayUnion, increment 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIG & CONSTANTS ---
+        const firebaseConfig = (typeof __firebase_config !== 'undefined') ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyCbolraCD1nrOqcIE5GHPAaX9SRhHQXYIY",
+            authDomain: "videoanlyze.firebaseapp.com",
+            projectId: "videoanlyze",
+            storageBucket: "videoanlyze.firebasestorage.app",
+            messagingSenderId: "1053069335615",
+            appId: "1:1053069335615:web:5dbf8f2345a5bf18b1ac8a",
+            measurementId: "G-TLEWYXX05H"
+        };
+        const APP_ID = (typeof __app_id !== 'undefined') ? __app_id : 'videoanlyze';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Game Data Constants
+        const MAP_SIZE = 32;
+        const COUNTRIES = [
+            { code: 'TR', name: 'Türkiye', flag: '🇹🇷', color: 'bg-red-600' },
+            { code: 'US', name: 'ABD', flag: '🇺🇸', color: 'bg-blue-600' },
+            { code: 'RU', name: 'Rusya', flag: '🇷🇺', color: 'bg-red-800' },
+            { code: 'CN', name: 'Çin', flag: '🇨🇳', color: 'bg-yellow-600' },
+            { code: 'DE', name: 'Almanya', flag: '🇩🇪', color: 'bg-gray-800' },
+            { code: 'GB', name: 'İngiltere', flag: '🇬🇧', color: 'bg-blue-800' },
+            { code: 'FR', name: 'Fransa', flag: '🇫🇷', color: 'bg-blue-500' },
+            { code: 'JP', name: 'Japonya', flag: '🇯🇵', color: 'bg-red-400' },
+            { code: 'KR', name: 'Güney Kore', flag: '🇰🇷', color: 'bg-blue-400' },
+            { code: 'BR', name: 'Brezilya', flag: '🇧🇷', color: 'bg-green-600' },
+        ];
+        const BUILDINGS = {
+            HQ: { id: 'HQ', name: 'Karargah', icon: '🏛️', cost: { oil: 0, wheat: 0, dollar: 0 } },
+            BARRACKS: { id: 'BARRACKS', name: 'Kışla', icon: '🏠', cost: { oil: 200, wheat: 100, dollar: 300 } },
+            TOWER: { id: 'TOWER', name: 'Savunma Kulesi', icon: '🗼', cost: { oil: 150, wheat: 50, dollar: 200 }, range: 3, damage: 20 },
+            RADAR: { id: 'RADAR', name: 'Radar', icon: '📡', cost: { oil: 100, wheat: 0, dollar: 500 }, range: 8 },
+            HOSPITAL: { id: 'HOSPITAL', name: 'Hastane', icon: '🏥', cost: { oil: 100, wheat: 300, dollar: 200 }, range: 2 },
+        };
+        const UNITS = {
+            INFANTRY: { id: 'INFANTRY', name: 'Piyade', icon: '🔫', cost: { oil: 50, wheat: 50, dollar: 50 }, hp: 100, damage: 15, range: 2, moveCost: 10, ammoCost: 10 },
+            HEAVY: { id: 'HEAVY', name: 'Ağır Piyade', icon: '💪', cost: { oil: 150, wheat: 100, dollar: 100 }, hp: 250, damage: 25, range: 1, moveCost: 20, ammoCost: 20 },
+            SNIPER: { id: 'SNIPER', name: 'Keskin Nişancı', icon: '🎯', cost: { oil: 50, wheat: 100, dollar: 200 }, hp: 60, damage: 60, range: 5, moveCost: 15, ammoCost: 30 },
+            SCOUT: { id: 'SCOUT', name: 'Keşifçi', icon: '🏃', cost: { oil: 100, wheat: 50, dollar: 50 }, hp: 80, damage: 5, range: 3, moveCost: 5, ammoCost: 5 },
+        };
+        const RESOURCES = {
+            OIL: { id: 'oil', name: 'Petrol', icon: '🛢️', color: 'text-gray-400' },
+            WHEAT: { id: 'wheat', name: 'Buğday', icon: '🌾', color: 'text-yellow-600' },
+            DOLLAR: { id: 'dollar', name: 'Dolar', icon: '💵', color: 'text-green-600' },
+            AMMO: { id: 'ammo', name: 'Mühimmat', icon: '🔹', color: 'text-blue-500' },
+            MOVE: { id: 'move', name: 'Hareket', icon: '👟', color: 'text-orange-500' },
+        };
+
+        // --- STATE ---
+        let currentUser = null;
+        let gameState = 'menu'; // menu, lobby, game
+        let currentGameCode = '';
+        let gameData = null;
+        let selectedCountry = COUNTRIES[0];
+        let selectedTile = null;
+        let unsubGame = null;
+        let productionInterval = null;
+
+        // --- HELPER FUNCTIONS ---
+        const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+        const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const showNotification = (msg) => {
+            const el = document.getElementById('notification');
+            el.innerText = msg;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        };
+        const el = (id) => document.getElementById(id);
+
+        // --- AUTH ---
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
+        
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                el('loading-screen').classList.add('hidden');
+                switchState('menu');
             }
         });
-      });
+        initAuth();
 
-      // Update Firestore only if there is income
-      if (oilIncome > 0 || wheatIncome > 0 || dollarIncome > 0) {
-        const gameRef = doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`);
-        try {
-            await updateDoc(gameRef, {
-                [`players.${cUser.uid}.resources.oil`]: increment(oilIncome),
-                [`players.${cUser.uid}.resources.wheat`]: increment(wheatIncome),
-                [`players.${cUser.uid}.resources.dollar`]: increment(dollarIncome)
+        // --- UI SWITCHER ---
+        const switchState = (newState) => {
+            gameState = newState;
+            ['menu-screen', 'lobby-screen', 'game-screen'].forEach(id => el(id).classList.add('hidden'));
+            el(`${newState}-screen`).classList.remove('hidden');
+
+            if (newState === 'menu') renderMenu();
+        };
+
+        // --- MENU LOGIC ---
+        const renderMenu = () => {
+            const list = el('country-list');
+            list.innerHTML = '';
+            COUNTRIES.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = `p-2 rounded text-2xl transition hover:scale-110 ${selectedCountry.code === c.code ? 'ring-2 ring-yellow-400 bg-gray-700' : ''}`;
+                btn.innerText = c.flag;
+                btn.onclick = () => {
+                    selectedCountry = c;
+                    renderMenu();
+                };
+                list.appendChild(btn);
             });
-            // Optional: Show small +income floating text (not implemented for simplicity)
-        } catch (e) {
-            console.error("Income sync error:", e);
-        }
-      }
-    }, 10000); // Every 10 seconds
+            el('selected-country-name').innerText = `${selectedCountry.name} Ordusu Hazır!`;
+        };
 
-    return () => clearInterval(interval);
-  }, [gameState, gameCode]); // Only restart if game state changes
-
-  const showNotification = (msg) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
-  };
-
-  // --- ACTIONS ---
-
-  const createGame = async () => {
-    if (!user) return;
-    setLoading(true);
-    const code = generateCode();
-    
-    // Generate Map
-    const newMap = [];
-    for (let y = 0; y < MAP_SIZE; y++) {
-      const row = [];
-      for (let x = 0; x < MAP_SIZE; x++) {
-        let type = 'ground';
-        let resource = null;
-        let production = 0;
-        
-        // Random Resources (10% chance)
-        if (Math.random() < 0.10) {
-            const rRand = Math.random();
-            if (rRand < 0.33) { resource = 'oil'; production = getRandomInt(500, 2000); }
-            else if (rRand < 0.66) { resource = 'wheat'; production = getRandomInt(500, 2000); }
-            else { resource = 'dollar'; production = getRandomInt(500, 2000); }
-        }
-        
-        row.push({
-            x, y, type, 
-            resourceType: resource, 
-            maxReserve: production * 10,
-            production: Math.floor(production / 50),
-            structureType: resource ? 'MINE_WILD' : null,
-            unit: null,
-            owner: null
-        });
-      }
-      newMap.push(row);
-    }
-
-    const initialData = {
-      code,
-      host: user.uid,
-      status: 'lobby',
-      createdAt: Date.now(),
-      players: {
-        [user.uid]: {
-            id: user.uid,
-            name: `Komutan ${user.uid.slice(0,4)}`,
-            country: selectedCountry,
-            ready: false,
-            resources: { oil: 500, wheat: 500, dollar: 500, ammo: 50, move: 50 },
-            diplomacy: {}
-        }
-      },
-      map: newMap,
-      market: []
-    };
-
-    try {
-      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${code}`), initialData);
-      setGameCode(code);
-      setGameState('lobby');
-    } catch (error) {
-      console.error(error);
-      showNotification("Oyun oluşturulamadı. İzinleri kontrol edin.");
-    }
-    setLoading(false);
-  };
-
-  const joinGame = async (codeInput) => {
-    if (!user || !codeInput) return;
-    setLoading(true);
-    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', `game_${codeInput}`);
-    try {
-        const snap = await getDoc(gameRef);
-        if (snap.exists()) {
-            const data = snap.data();
-            if (data.status !== 'lobby') {
-                showNotification("Oyun çoktan başladı.");
-                setLoading(false);
-                return;
-            }
-            if (Object.keys(data.players).length >= 10) {
-                showNotification("Oda dolu.");
-                setLoading(false);
-                return;
+        el('btn-create-game').onclick = async () => {
+            if (!currentUser) return;
+            el('btn-create-game').innerText = "Oluşturuluyor...";
+            const code = generateCode();
+            
+            // Map generation
+            const newMap = [];
+            for (let y = 0; y < MAP_SIZE; y++) {
+                const row = [];
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    let resource = null;
+                    let production = 0;
+                    if (Math.random() < 0.10) {
+                        const rRand = Math.random();
+                        if (rRand < 0.33) { resource = 'oil'; production = getRandomInt(500, 2000); }
+                        else if (rRand < 0.66) { resource = 'wheat'; production = getRandomInt(500, 2000); }
+                        else { resource = 'dollar'; production = getRandomInt(500, 2000); }
+                    }
+                    row.push({
+                        x, y,
+                        resourceType: resource,
+                        maxReserve: production * 10,
+                        production: Math.floor(production / 50),
+                        structureType: resource ? 'MINE_WILD' : null,
+                        unit: null,
+                        owner: null,
+                        hp: resource ? 500 : 0
+                    });
+                }
+                newMap.push(row);
             }
 
-            // Check if already joined
-            if (!data.players[user.uid]) {
-                await updateDoc(gameRef, {
-                    [`players.${user.uid}`]: {
-                        id: user.uid,
-                        name: `Komutan ${user.uid.slice(0,4)}`,
+            const initialData = {
+                code,
+                host: currentUser.uid,
+                status: 'lobby',
+                createdAt: Date.now(),
+                players: {
+                    [currentUser.uid]: {
+                        id: currentUser.uid,
+                        name: `Komutan ${currentUser.uid.slice(0,4)}`,
                         country: selectedCountry,
-                        ready: false,
                         resources: { oil: 500, wheat: 500, dollar: 500, ammo: 50, move: 50 },
                         diplomacy: {}
                     }
+                },
+                map: newMap,
+                market: []
+            };
+
+            try {
+                await setDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${code}`), initialData);
+                joinGameSuccess(code);
+            } catch (e) { console.error(e); showNotification("Hata oluştu."); }
+            el('btn-create-game').innerHTML = `⚡ Yeni Operasyon`;
+        };
+
+        el('btn-join-game').onclick = async () => {
+            const code = el('input-game-code').value;
+            if (!code) return;
+            const gameRef = doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${code}`);
+            try {
+                const snap = await getDoc(gameRef);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data.status !== 'lobby' && !data.players[currentUser.uid]) {
+                        showNotification("Oyun başlamış."); return;
+                    }
+                    if (Object.keys(data.players).length >= 10 && !data.players[currentUser.uid]) {
+                        showNotification("Oda dolu."); return;
+                    }
+                    if (!data.players[currentUser.uid]) {
+                        await updateDoc(gameRef, {
+                            [`players.${currentUser.uid}`]: {
+                                id: currentUser.uid,
+                                name: `Komutan ${currentUser.uid.slice(0,4)}`,
+                                country: selectedCountry,
+                                resources: { oil: 500, wheat: 500, dollar: 500, ammo: 50, move: 50 },
+                                diplomacy: {}
+                            }
+                        });
+                    }
+                    joinGameSuccess(code);
+                } else { showNotification("Kod hatalı."); }
+            } catch (e) { console.error(e); }
+        };
+
+        const joinGameSuccess = (code) => {
+            currentGameCode = code;
+            subscribeToGame(code);
+            switchState('lobby');
+        };
+
+        // --- GAME SUBSCRIPTION & LOGIC ---
+        const subscribeToGame = (code) => {
+            if (unsubGame) unsubGame();
+            const gameRef = doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${code}`);
+            
+            unsubGame = onSnapshot(gameRef, (docSnap) => {
+                if (!docSnap.exists()) {
+                    showNotification("Oyun sonlandı.");
+                    switchState('menu');
+                    return;
+                }
+                const oldData = gameData;
+                gameData = docSnap.data();
+
+                if (gameState === 'lobby') updateLobbyUI();
+                if (gameData.status === 'game' && gameState !== 'game') {
+                    switchState('game');
+                    initGameLoop();
+                }
+                if (gameState === 'game') updateGameUI(oldData);
+            });
+        };
+
+        // --- LOBBY LOGIC ---
+        const updateLobbyUI = () => {
+            el('lobby-code-display').innerText = gameData.code;
+            el('lobby-code-display').onclick = () => { navigator.clipboard.writeText(gameData.code); showNotification("Kod Kopyalandı!"); };
+            
+            const list = el('lobby-player-list');
+            list.innerHTML = '';
+            Object.values(gameData.players).forEach(p => {
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between bg-gray-600 p-3 rounded";
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">${p.country.flag}</span>
+                        <span class="font-bold">${p.name} ${p.id === gameData.host ? '👑' : ''}</span>
+                    </div>
+                    <span class="text-green-400">● Çevrimiçi</span>
+                `;
+                list.appendChild(div);
+            });
+
+            if (gameData.host === currentUser.uid) {
+                el('lobby-host-controls').classList.remove('hidden');
+                el('lobby-waiting-msg').classList.add('hidden');
+            } else {
+                el('lobby-host-controls').classList.add('hidden');
+                el('lobby-waiting-msg').classList.remove('hidden');
+            }
+        };
+
+        el('btn-start-game').onclick = async () => {
+            // Assign HQs
+            const mapCopy = JSON.parse(JSON.stringify(gameData.map));
+            const pIds = Object.keys(gameData.players);
+            const positions = [];
+            pIds.forEach(pid => {
+                let placed = false;
+                let attempts = 0;
+                while (!placed && attempts < 100) {
+                    attempts++;
+                    const rx = getRandomInt(2, MAP_SIZE - 3);
+                    const ry = getRandomInt(2, MAP_SIZE - 3);
+                    const tooClose = positions.some(p => Math.abs(p.x - rx) < 6 && Math.abs(p.y - ry) < 6);
+                    if (!tooClose && !mapCopy[ry][rx].resourceType) {
+                        mapCopy[ry][rx].structureType = 'HQ';
+                        mapCopy[ry][rx].owner = pid;
+                        mapCopy[ry][rx].hp = 1000;
+                        positions.push({x: rx, y: ry});
+                        placed = true;
+                    }
+                }
+            });
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`), {
+                status: 'game',
+                map: mapCopy
+            });
+        };
+
+        // --- GAME LOGIC ---
+        const initGameLoop = () => {
+            // Render Map Grid Once
+            const grid = el('game-map');
+            grid.innerHTML = '';
+            for (let y = 0; y < MAP_SIZE; y++) {
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    const cell = document.createElement('div');
+                    cell.id = `cell-${x}-${y}`;
+                    cell.className = 'tile bg-[#2d3748]'; // Default color
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    // Event Delegation handled by container, but direct click works too
+                    cell.onclick = () => handleTileClick(x, y);
+                    grid.appendChild(cell);
+                }
+            }
+
+            // Start Production Loop
+            if (productionInterval) clearInterval(productionInterval);
+            productionInterval = setInterval(handleProduction, 10000);
+        };
+
+        const handleProduction = async () => {
+            if (!gameData || !currentUser) return;
+            const myId = currentUser.uid;
+            let oil = 0, wheat = 0, dollar = 0;
+            
+            // Client-side estimation & sync (Trusted client model for simplicity)
+            gameData.map.forEach(row => row.forEach(tile => {
+                if (tile.owner === myId && (tile.structureType === 'MINE' || tile.structureType === 'MINE_WILD')) {
+                    if (tile.resourceType === 'oil') oil += tile.production || 10;
+                    if (tile.resourceType === 'wheat') wheat += tile.production || 10;
+                    if (tile.resourceType === 'dollar') dollar += tile.production || 10;
+                }
+            }));
+
+            if (oil > 0 || wheat > 0 || dollar > 0) {
+                const gameRef = doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`);
+                await updateDoc(gameRef, {
+                    [`players.${myId}.resources.oil`]: increment(oil),
+                    [`players.${myId}.resources.wheat`]: increment(wheat),
+                    [`players.${myId}.resources.dollar`]: increment(dollar)
                 });
             }
-            setGameCode(codeInput);
-            setGameState('lobby');
-        } else {
-            showNotification("Oyun kodu geçersiz.");
-        }
-    } catch (e) {
-        console.error(e);
-        showNotification("Hata oluştu.");
-    }
-    setLoading(false);
-  };
+        };
 
-  const startGame = async () => {
-    if (!gameData || gameData.host !== user.uid) return;
-    
-    // Assign HQs randomly
-    const updatedMap = [...gameData.map];
-    const playerIds = Object.keys(gameData.players);
-    const positions = [];
-    
-    playerIds.forEach(pid => {
-        let placed = false;
-        let attempts = 0;
-        while (!placed && attempts < 100) {
-            attempts++;
-            const rx = getRandomInt(2, MAP_SIZE - 3);
-            const ry = getRandomInt(2, MAP_SIZE - 3);
-            const tooClose = positions.some(p => Math.abs(p.x - rx) < 5 && Math.abs(p.y - ry) < 5);
-            if (!tooClose && !updatedMap[ry][rx].resourceType) {
-                updatedMap[ry][rx].structureType = 'HQ';
-                updatedMap[ry][rx].owner = pid;
-                updatedMap[ry][rx].hp = 1000;
-                positions.push({x: rx, y: ry});
-                placed = true;
-            }
-        }
-    });
+        const updateGameUI = (oldData) => {
+            const myPlayer = gameData.players[currentUser.uid];
+            if (!myPlayer) return;
 
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
-        status: 'game',
-        map: updatedMap
-    });
-  };
+            // Header
+            el('p-flag').innerText = myPlayer.country.flag;
+            el('p-name').innerText = myPlayer.name;
+            el('p-id').innerText = `ID: ${myPlayer.id.slice(0,4)}`;
 
-  // --- GAMEPLAY ACTIONS ---
+            // Resources
+            const resContainer = el('resource-list');
+            resContainer.innerHTML = '';
+            Object.entries(RESOURCES).forEach(([key, r]) => {
+                resContainer.innerHTML += `
+                    <div class="flex items-center gap-1 ${r.color} bg-gray-800 p-1 rounded border border-gray-700">
+                        <span>${r.icon}</span>
+                        <span class="font-mono font-bold">${myPlayer.resources[r.id]}</span>
+                    </div>
+                `;
+            });
 
-  const buyResource = async (type) => {
-    if (!myPlayer) return;
-
-    const currentOil = myPlayer.resources.oil;
-    const currentWheat = myPlayer.resources.wheat;
-    const currentDollar = myPlayer.resources.dollar;
-
-    let updates = {};
-
-    if (type === 'AMMO') {
-        // Cost: 50 Wheat + 50 Oil
-        if (currentWheat >= 50 && currentOil >= 50) {
-            updates = {
-                [`players.${user.uid}.resources.wheat`]: increment(-50),
-                [`players.${user.uid}.resources.oil`]: increment(-50),
-                [`players.${user.uid}.resources.ammo`]: increment(50)
-            };
-        } else { showNotification("Yetersiz Petrol veya Buğday!"); return; }
-    } else if (type === 'MOVE') {
-        // Cost: 50 Oil + 50 Dollar
-        if (currentOil >= 50 && currentDollar >= 50) {
-             updates = {
-                [`players.${user.uid}.resources.oil`]: increment(-50),
-                [`players.${user.uid}.resources.dollar`]: increment(-50),
-                [`players.${user.uid}.resources.move`]: increment(50)
-            };
-        } else { showNotification("Yetersiz Petrol veya Dolar!"); return; }
-    }
-
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), updates);
-  };
-
-  const handleTileClick = async (x, y) => {
-    if (!gameData || gameState !== 'game') return;
-    const clickedTile = gameData.map[y][x];
-
-    // MOVEMENT & ATTACK LOGIC
-    if (selectedTile && selectedTile.unit && selectedTile.owner === user.uid) {
-        // If clicking same tile, deselect
-        if (selectedTile.x === x && selectedTile.y === y) {
-            setSelectedTile(null);
-            return;
-        }
-
-        const dx = Math.abs(selectedTile.x - x);
-        const dy = Math.abs(selectedTile.y - y);
-        const dist = Math.max(dx, dy); // Chebyshev distance
-        
-        // --- MOVE ---
-        // Can move if empty OR if it's a wild mine (to capture it)
-        const isStructureBlocking = clickedTile.structureType && clickedTile.structureType !== 'MINE_WILD' && clickedTile.structureType !== 'MINE';
-        const isUnitBlocking = clickedTile.unit;
-        
-        // Simplified: Can only move to empty ground or own structures/mines or wild mines
-        const canEnter = !clickedTile.unit && (!clickedTile.structureType || clickedTile.structureType === 'MINE_WILD' || (clickedTile.structureType === 'MINE' && clickedTile.owner === user.uid));
-
-        if (canEnter && dist <= 1) { 
-             const unitType = UNITS[selectedTile.unit.type];
-             if (myPlayer.resources.move >= unitType.moveCost) {
-                 const updatedMap = JSON.parse(JSON.stringify(gameData.map)); // Deep copy
-                 
-                 // Move unit data
-                 updatedMap[y][x].unit = { ...selectedTile.unit };
-                 updatedMap[y][x].owner = user.uid; // Unit presence claims land
-                 
-                 // Clear old
-                 updatedMap[selectedTile.y][selectedTile.x].unit = null;
-
-                 // Mine Capture Logic
-                 if (updatedMap[y][x].structureType === 'MINE_WILD') {
-                     updatedMap[y][x].structureType = 'MINE';
-                     updatedMap[y][x].owner = user.uid;
-                     showNotification("Maden ele geçirildi!");
-                 }
-
-                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
-                     map: updatedMap,
-                     [`players.${user.uid}.resources.move`]: increment(-unitType.moveCost)
-                 });
-                 setSelectedTile(null);
-                 return;
-             } else {
-                 showNotification("Yetersiz Hareket Puanı!");
-             }
-        }
-
-        // --- ATTACK ---
-        if ((clickedTile.unit || (clickedTile.structureType && clickedTile.owner)) && clickedTile.owner !== user.uid) {
-             const pact = myPlayer.diplomacy?.[clickedTile.owner];
-             if (pact && pact > Date.now()) {
-                 showNotification("Saldırmazlık paktı var!");
-                 return;
-             }
-
-             const unitType = UNITS[selectedTile.unit.type];
-             if (dist <= unitType.range) {
-                 if (myPlayer.resources.ammo >= unitType.ammoCost) {
-                    const updatedMap = JSON.parse(JSON.stringify(gameData.map));
-                    const target = updatedMap[y][x];
+            // Map Updates (Differential would be better, but full sweep is ok for 1000 cells)
+            gameData.map.forEach((row, y) => {
+                row.forEach((tile, x) => {
+                    const cell = el(`cell-${x}-${y}`);
+                    if (!cell) return;
                     
-                    const damage = unitType.damage;
+                    // Reset Content
+                    cell.innerHTML = '';
                     
-                    // Attack Unit
-                    if (target.unit) {
-                        target.unit.hp -= damage;
-                        if (target.unit.hp <= 0) {
-                            target.unit = null;
-                            showNotification("Düşman birimi yok edildi!");
-                        }
-                    } 
-                    // Attack Building
-                    else if (target.structureType) {
-                        target.hp = (target.hp || 500) - damage;
-                        if (target.hp <= 0) {
-                            target.structureType = null;
-                            target.owner = null;
-                            showNotification("Bina yıkıldı!");
+                    // Background
+                    let bg = '#2d3748';
+                    if (tile.resourceType === 'oil') bg = '#2d3748'; // Dark
+                    if (tile.resourceType === 'wheat') bg = '#744210'; // Brownish
+                    if (tile.resourceType === 'dollar') bg = '#22543d'; // Greenish
+                    cell.style.backgroundColor = bg;
+
+                    // Owner Overlay
+                    if (tile.owner) {
+                        const ownerP = gameData.players[tile.owner];
+                        if (ownerP) {
+                            const overlay = document.createElement('div');
+                            overlay.className = `absolute inset-0 opacity-20 ${ownerP.country.color}`;
+                            cell.appendChild(overlay);
+                            
+                            if (!tile.unit) {
+                                const flag = document.createElement('div');
+                                flag.className = "absolute bottom-1 right-1 text-[10px] opacity-60";
+                                flag.innerText = ownerP.country.flag;
+                                cell.appendChild(flag);
+                            }
                         }
                     }
 
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
-                         map: updatedMap,
-                        [`players.${user.uid}.resources.ammo`]: increment(-unitType.ammoCost)
-                    });
-                    setSelectedTile(null); 
-                 } else {
-                     showNotification("Yetersiz Mühimmat!");
-                 }
-                 return;
-             } else {
-                 showNotification("Menzil dışı!");
-             }
-        }
-    }
+                    // Structure / Resource
+                    if (tile.structureType) {
+                        const div = document.createElement('div');
+                        div.className = "absolute z-10 text-2xl drop-shadow-md";
+                        if (tile.structureType === 'MINE_WILD') {
+                            div.className += " opacity-70 animate-pulse";
+                            div.innerText = tile.resourceType === 'oil' ? '🛢️' : tile.resourceType === 'wheat' ? '🌾' : '💵';
+                        } else if (tile.structureType === 'MINE') {
+                             div.innerText = tile.resourceType === 'oil' ? '🛢️' : tile.resourceType === 'wheat' ? '🌾' : '💵';
+                             const dot = document.createElement('div');
+                             dot.className = "absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-black";
+                             div.appendChild(dot);
+                        } else {
+                            div.innerText = BUILDINGS[tile.structureType]?.icon || '?';
+                            // HP for buildings
+                            if (tile.hp < 500) {
+                                // Simple damage indicator
+                                div.style.filter = "grayscale(50%) sepia(50%) hue-rotate(-50deg)";
+                            }
+                        }
+                        cell.appendChild(div);
+                    }
 
-    setSelectedTile(clickedTile);
-  };
+                    // Unit
+                    if (tile.unit) {
+                        const uDiv = document.createElement('div');
+                        uDiv.className = "absolute z-20 text-3xl transform hover:-translate-y-1 transition drop-shadow-xl";
+                        uDiv.innerText = UNITS[tile.unit.type].icon;
+                        
+                        // HP Bar
+                        const hpBar = document.createElement('div');
+                        hpBar.className = "absolute -bottom-1 left-0 w-full h-1 bg-gray-700 rounded-full overflow-hidden";
+                        const fill = document.createElement('div');
+                        fill.className = "h-full bg-green-500";
+                        fill.style.width = `${(tile.unit.hp / tile.unit.maxHp) * 100}%`;
+                        hpBar.appendChild(fill);
+                        uDiv.appendChild(hpBar);
+                        
+                        cell.appendChild(uDiv);
+                    }
 
-  const buildStructure = async (buildingKey) => {
-    if (!selectedTile || !myPlayer) return;
-    if (selectedTile.owner !== user.uid && selectedTile.structureType !== 'MINE_WILD') {
-        showNotification("Bu toprak senin değil!");
-        return;
-    }
-    if (selectedTile.structureType && selectedTile.structureType !== 'MINE_WILD') {
-        showNotification("Burada zaten bina var.");
-        return;
-    }
-    if (selectedTile.unit) {
-        showNotification("Önce birimi çek.");
-        return;
-    }
+                    // Selection Ring
+                    if (selectedTile && selectedTile.x === x && selectedTile.y === y) {
+                        cell.classList.add('selected');
+                    } else {
+                        cell.classList.remove('selected');
+                    }
+                });
+            });
 
-    const building = BUILDINGS[buildingKey];
-    if (myPlayer.resources.oil < building.cost.oil || 
-        myPlayer.resources.wheat < building.cost.wheat || 
-        myPlayer.resources.dollar < building.cost.dollar) {
-        showNotification("Kaynak yetersiz!");
-        return;
-    }
-
-    if (selectedTile.structureType === 'MINE_WILD') {
-        showNotification("Madenlerin üzerine bina yapılamaz.");
-        return;
-    }
-
-    const updatedMap = JSON.parse(JSON.stringify(gameData.map));
-    updatedMap[selectedTile.y][selectedTile.x].structureType = building.id;
-    updatedMap[selectedTile.y][selectedTile.x].owner = user.uid;
-    updatedMap[selectedTile.y][selectedTile.x].hp = 500;
-
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
-        map: updatedMap,
-        [`players.${user.uid}.resources.oil`]: increment(-building.cost.oil),
-        [`players.${user.uid}.resources.wheat`]: increment(-building.cost.wheat),
-        [`players.${user.uid}.resources.dollar`]: increment(-building.cost.dollar),
-    });
-    setSelectedTile(null);
-  };
-
-  const trainUnit = async (unitKey) => {
-     if (!selectedTile || !myPlayer) return;
-     if (selectedTile.structureType !== 'BARRACKS' || selectedTile.owner !== user.uid) {
-         showNotification("Sadece Kışlada asker üretilir.");
-         return;
-     }
-     if (selectedTile.unit) {
-         showNotification("Kışla dolu.");
-         return;
-     }
-
-     const unit = UNITS[unitKey];
-     if (myPlayer.resources.oil < unit.cost.oil || 
-        myPlayer.resources.wheat < unit.cost.wheat || 
-        myPlayer.resources.dollar < unit.cost.dollar) {
-        showNotification("Kaynak yetersiz!");
-        return;
-    }
-
-    const updatedMap = JSON.parse(JSON.stringify(gameData.map));
-    updatedMap[selectedTile.y][selectedTile.x].unit = {
-        type: unitKey,
-        hp: unit.hp,
-        maxHp: unit.hp,
-        owner: user.uid
-    };
-
-    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
-        map: updatedMap,
-        [`players.${user.uid}.resources.oil`]: increment(-unit.cost.oil),
-        [`players.${user.uid}.resources.wheat`]: increment(-unit.cost.wheat),
-        [`players.${user.uid}.resources.dollar`]: increment(-unit.cost.dollar),
-    });
-    setSelectedTile(null);
-  };
-
-  const offerPact = async (targetPlayerId) => {
-      if (myPlayer.resources.dollar < 500) { showNotification("Diplomasi için 500$ lazım."); return; }
-      const duration = 5 * 60 * 1000; // 5 min
-      const expiry = Date.now() + duration;
-
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
-          [`players.${user.uid}.diplomacy.${targetPlayerId}`]: expiry,
-          [`players.${targetPlayerId}.diplomacy.${user.uid}`]: expiry,
-          [`players.${user.uid}.resources.dollar`]: increment(-500)
-      });
-      showNotification("Pakt imzalandı (5 dk)");
-  };
-
-  const postMarketOffer = async (resource, amount, price) => {
-      if (!resource || !amount || !price) return;
-      if (myPlayer.resources[resource.toLowerCase()] < amount) { showNotification("Yetersiz kaynak."); return; }
-
-      const offer = {
-          id: Date.now().toString(),
-          seller: user.uid,
-          sellerName: myPlayer.name,
-          resource,
-          amount: parseInt(amount),
-          price: parseInt(price)
-      };
-
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
-          market: arrayUnion(offer),
-          [`players.${user.uid}.resources.${resource.toLowerCase()}`]: increment(-amount)
-      });
-      showNotification("İlan eklendi.");
-  };
-
-  const buyMarketOffer = async (offer) => {
-      if (myPlayer.resources.dollar < offer.price) { showNotification("Paran yetmiyor."); return; }
-      
-      const newMarket = gameData.market.filter(o => o.id !== offer.id);
-      if (newMarket.length === gameData.market.length) { showNotification("İlan artık yok."); return; }
-
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
-          market: newMarket,
-          [`players.${user.uid}.resources.dollar`]: increment(-offer.price),
-          [`players.${user.uid}.resources.${offer.resource.toLowerCase()}`]: increment(offer.amount),
-          [`players.${offer.seller}.resources.dollar`]: increment(offer.price)
-      });
-      showNotification("Satın alındı!");
-  };
-
-  // --- RENDERING ---
-
-  if (!user) return <div className="flex items-center justify-center h-screen bg-gray-900 text-white">Yükleniyor...</div>;
-
-  return (
-    <div className="flex flex-col h-screen bg-gray-900 text-gray-100 overflow-hidden font-sans">
-      {/* Notification Toast */}
-      {notification && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-6 py-2 rounded-lg shadow-xl z-50 font-bold animate-bounce pointer-events-none">
-          {notification}
-        </div>
-      )}
-
-      {/* --- MENU SCREEN --- */}
-      {gameState === 'menu' && (
-        <div className="flex flex-col items-center justify-center h-full space-y-8 bg-[url('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80')] bg-cover bg-blend-multiply bg-gray-800">
-          <h1 className="text-6xl font-black text-yellow-500 tracking-tighter uppercase drop-shadow-lg">Taktik Komuta</h1>
-          <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 w-96 opacity-95">
-            <h2 className="text-xl mb-4 font-bold text-center">Ülkeni Seç</h2>
-            <div className="grid grid-cols-5 gap-2 mb-6">
-              {COUNTRIES.map(c => (
-                <button 
-                    key={c.code}
-                    onClick={() => setSelectedCountry(c)}
-                    className={`p-2 rounded text-2xl transition hover:scale-110 ${selectedCountry.code === c.code ? 'ring-2 ring-yellow-400 bg-gray-700' : ''}`}
-                    title={c.name}
-                >
-                  {c.flag}
-                </button>
-              ))}
-            </div>
-            <div className="text-center mb-6 text-yellow-400 font-bold">{selectedCountry.name} Ordusu Hazır!</div>
-            
-            <div className="flex flex-col gap-4">
-              <button onClick={createGame} disabled={loading} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2">
-                {loading ? '...' : 'Yeni Operasyon Başlat'} <Zap size={20} />
-              </button>
-              <div className="flex gap-2">
-                <input 
-                    type="text" 
-                    placeholder="Erişim Kodu" 
-                    className="bg-gray-700 text-white px-4 rounded-lg w-full uppercase tracking-widest text-center"
-                    onChange={(e) => setGameCode(e.target.value)}
-                    maxLength={6}
-                />
-                <button onClick={() => joinGame(gameCode)} disabled={loading} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg">
-                  Katıl
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- LOBBY SCREEN --- */}
-      {gameState === 'lobby' && gameData && (
-        <div className="flex flex-col items-center justify-center h-full bg-gray-800">
-          <div className="bg-gray-700 p-8 rounded-2xl w-[600px] shadow-2xl">
-            <h2 className="text-3xl font-bold text-center mb-2">Operasyon Odası</h2>
-            <p className="text-center text-4xl font-mono text-yellow-400 tracking-[0.5em] mb-8 bg-black/30 py-4 rounded-lg select-all cursor-pointer" onClick={() => {navigator.clipboard.writeText(gameData.code); showNotification("Kod Kopyalandı!");}}>
-                {gameData.code}
-            </p>
-            
-            <div className="space-y-2 mb-8">
-                {Object.values(gameData.players).map(p => (
-                    <div key={p.id} className="flex items-center justify-between bg-gray-600 p-3 rounded">
-                        <div className="flex items-center gap-3">
-                            <span className="text-2xl">{p.country.flag}</span>
-                            <span className="font-bold">{p.name} {p.id === gameData.host ? '(Yönetici)' : ''}</span>
-                        </div>
-                        <span className="text-green-400">● Çevrimiçi</span>
+            // Market
+            const mList = el('market-list');
+            mList.innerHTML = '';
+            (gameData.market || []).forEach(offer => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-gray-800 p-1 rounded text-xs border border-gray-700";
+                div.innerHTML = `
+                    <div class="flex items-center gap-1">
+                        <span>${offer.resource === 'OIL' ? '🛢️' : '🌾'}</span>
+                        <span class="font-bold">${offer.amount}</span>
                     </div>
-                ))}
-            </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-400">${offer.price}$</span>
+                        ${offer.seller !== currentUser.uid ? `<button class="bg-green-800 px-1 rounded hover:bg-green-700 btn-buy" data-id="${offer.id}">Al</button>` : ''}
+                    </div>
+                `;
+                // Add event listener for buy buttons dynamically
+                const buyBtn = div.querySelector('.btn-buy');
+                if(buyBtn) buyBtn.onclick = () => buyMarketOffer(offer);
+                mList.appendChild(div);
+            });
 
-            {gameData.host === user.uid ? (
-                 <button onClick={startGame} className="w-full bg-green-600 hover:bg-green-500 py-4 rounded-lg font-bold text-xl">
-                     OPERASYONU BAŞLAT
-                 </button>
-            ) : (
-                <div className="text-center text-gray-400 animate-pulse">Yönetici bekleniyor...</div>
-            )}
-          </div>
-        </div>
-      )}
+            // Re-render selection panel if selected
+            if (selectedTile) renderSelectionPanel();
+        };
 
-      {/* --- GAME SCREEN --- */}
-      {gameState === 'game' && gameData && myPlayer && (
-        <div className="flex flex-1 overflow-hidden">
-          
-          {/* LEFT SIDEBAR - INFO & ACTIONS */}
-          <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col z-20 shadow-xl">
-             {/* Player Header */}
-             <div className="p-4 bg-gray-900 border-b border-gray-700">
-                 <div className="flex items-center gap-3 mb-2">
-                     <span className="text-4xl">{myPlayer.country.flag}</span>
-                     <div>
-                         <h3 className="font-bold text-lg leading-none">{myPlayer.name}</h3>
-                         <span className="text-xs text-gray-400">ID: {user.uid.slice(0,6)}</span>
-                     </div>
-                 </div>
-                 
-                 {/* Resources Grid */}
-                 <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
-                     {Object.entries(RESOURCES).map(([key, res]) => (
-                         <div key={key} className={`flex items-center gap-1 ${res.color} bg-gray-800 p-1 rounded border border-gray-700`}>
-                             <span>{res.icon}</span>
-                             <span className="font-mono font-bold">{myPlayer.resources[res.id]}</span>
-                         </div>
-                     ))}
-                 </div>
-                 <div className="flex gap-2 mt-2">
-                    <button onClick={() => buyResource('AMMO')} className="flex-1 bg-blue-900/50 hover:bg-blue-800 text-xs py-1 px-2 rounded border border-blue-700 flex items-center justify-center gap-1">
-                        +50 {RESOURCES.AMMO.icon} (50{RESOURCES.OIL.icon} 50{RESOURCES.WHEAT.icon})
-                    </button>
-                    <button onClick={() => buyResource('MOVE')} className="flex-1 bg-orange-900/50 hover:bg-orange-800 text-xs py-1 px-2 rounded border border-orange-700 flex items-center justify-center gap-1">
-                        +50 {RESOURCES.MOVE.icon} (50{RESOURCES.OIL.icon} 50{RESOURCES.DOLLAR.icon})
-                    </button>
-                 </div>
-             </div>
+        // --- INTERACTION ---
+        window.handleTileClick = async (x, y) => {
+            const clicked = gameData.map[y][x];
+            const myPlayer = gameData.players[currentUser.uid];
 
-             {/* Selection Info */}
-             <div className="flex-1 p-4 overflow-y-auto">
-                 {selectedTile ? (
-                     <div className="animate-in fade-in slide-in-from-left-4 duration-300">
-                         <h4 className="text-yellow-400 font-bold uppercase text-xs tracking-wider mb-2">Seçili Bölge ({selectedTile.x}, {selectedTile.y})</h4>
+            if (selectedTile && selectedTile.unit && selectedTile.owner === currentUser.uid) {
+                if (selectedTile.x === x && selectedTile.y === y) {
+                    selectedTile = null; renderSelectionPanel(); updateGameUI(); return;
+                }
+
+                const dx = Math.abs(selectedTile.x - x);
+                const dy = Math.abs(selectedTile.y - y);
+                const dist = Math.max(dx, dy);
+
+                // MOVE
+                const canEnter = !clicked.unit && (!clicked.structureType || clicked.structureType === 'MINE_WILD' || (clicked.structureType === 'MINE' && clicked.owner === currentUser.uid));
+                
+                if (canEnter && dist <= 1) {
+                     const uType = UNITS[selectedTile.unit.type];
+                     if (myPlayer.resources.move >= uType.moveCost) {
+                         const mapCopy = JSON.parse(JSON.stringify(gameData.map));
+                         mapCopy[y][x].unit = { ...selectedTile.unit };
+                         mapCopy[y][x].owner = currentUser.uid;
+                         mapCopy[selectedTile.y][selectedTile.x].unit = null;
                          
-                         {/* Tile Info */}
-                         <div className="bg-gray-700 p-3 rounded-lg mb-4 text-sm">
-                            {selectedTile.owner ? (
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span>{gameData.players[selectedTile.owner]?.country.flag}</span>
-                                    <span className={selectedTile.owner === user.uid ? 'text-green-400' : 'text-red-400'}>
-                                        {gameData.players[selectedTile.owner]?.name}
-                                    </span>
-                                </div>
-                            ) : <div className="text-gray-400 mb-2">Sahipsiz Toprak</div>}
-                            
-                            {selectedTile.structureType && (
-                                <div className="flex justify-between items-center border-t border-gray-600 pt-2">
-                                    <span className="font-bold">
-                                        {(selectedTile.structureType === 'MINE' || selectedTile.structureType === 'MINE_WILD') ? 
-                                        `MADEN (${selectedTile.resourceType})` : 
-                                        BUILDINGS[selectedTile.structureType]?.name}
-                                    </span>
-                                    <span className="text-xs text-gray-400">HP: {selectedTile.hp || 100}</span>
-                                </div>
-                            )}
-                            
-                            {selectedTile.unit && (
-                                <div className="flex justify-between items-center border-t border-gray-600 pt-2 mt-2">
-                                    <span className="font-bold flex items-center gap-1">{UNITS[selectedTile.unit.type].icon} {UNITS[selectedTile.unit.type].name}</span>
-                                    <div className="flex flex-col items-end text-xs">
-                                        <span className="text-green-400">HP: {selectedTile.unit.hp}</span>
-                                        <span className="text-red-400">DMG: {UNITS[selectedTile.unit.type].damage}</span>
-                                    </div>
-                                </div>
-                            )}
-                         </div>
+                         if (mapCopy[y][x].structureType === 'MINE_WILD') {
+                             mapCopy[y][x].structureType = 'MINE';
+                             mapCopy[y][x].owner = currentUser.uid;
+                             showNotification("Maden ele geçirildi!");
+                         }
 
-                         {/* Actions if Owned */}
-                         {selectedTile.owner === user.uid && !selectedTile.unit && !selectedTile.structureType?.includes('MINE') && (
-                             <div className="space-y-2">
-                                 {!selectedTile.structureType && (
-                                     <>
-                                        <div className="text-xs text-gray-400 mb-1">Bina İnşa Et</div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {Object.entries(BUILDINGS).filter(([k]) => k !== 'HQ').map(([key, b]) => (
-                                                <button key={key} onClick={() => buildStructure(key)} className="bg-gray-700 hover:bg-gray-600 p-2 rounded text-left text-xs border border-gray-600 transition">
-                                                    <div className="font-bold">{b.icon} {b.name}</div>
-                                                    <div className="text-[10px] text-gray-400 mt-1">
-                                                        {b.cost.oil > 0 && `${b.cost.oil}🛢️ `} 
-                                                        {b.cost.wheat > 0 && `${b.cost.wheat}🌾 `}
-                                                        {b.cost.dollar > 0 && `${b.cost.dollar}💵`}
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                     </>
-                                 )}
+                         await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`), {
+                             map: mapCopy,
+                             [`players.${currentUser.uid}.resources.move`]: increment(-uType.moveCost)
+                         });
+                         selectedTile = null; renderSelectionPanel(); return;
+                     } else { showNotification("Yetersiz Hareket Puanı!"); }
+                }
 
-                                 {selectedTile.structureType === 'BARRACKS' && (
-                                     <>
-                                        <div className="text-xs text-gray-400 mb-1 mt-4">Asker Eğit</div>
-                                        <div className="space-y-2">
-                                            {Object.entries(UNITS).map(([key, u]) => (
-                                                <button key={key} onClick={() => trainUnit(key)} className="w-full bg-gray-700 hover:bg-gray-600 p-2 rounded flex justify-between items-center border border-gray-600 transition group">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xl group-hover:scale-125 transition">{u.icon}</span>
-                                                        <div className="flex flex-col items-start">
-                                                            <span className="text-sm font-bold">{u.name}</span>
-                                                            <span className="text-[10px] text-gray-400">Menzil: {u.range}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-[10px] text-right text-gray-400">
-                                                        <div>{u.cost.oil}🛢️ {u.cost.wheat}🌾</div>
-                                                        <div>{u.cost.dollar}💵</div>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                     </>
-                                 )}
-                             </div>
-                         )}
+                // ATTACK
+                if ((clicked.unit || (clicked.structureType && clicked.owner)) && clicked.owner !== currentUser.uid) {
+                    // Pact Check
+                    const pact = myPlayer.diplomacy?.[clicked.owner];
+                    if (pact && pact > Date.now()) { showNotification("Saldırmazlık Paktı!"); return; }
 
-                         {/* Actions if Enemy */}
-                         {selectedTile.owner && selectedTile.owner !== user.uid && (
-                             <div className="mt-4">
-                                 <button onClick={() => offerPact(selectedTile.owner)} className="w-full bg-blue-900 hover:bg-blue-800 text-blue-100 py-2 rounded flex items-center justify-center gap-2 text-sm border border-blue-700">
-                                     <Handshake size={16} /> Saldırmazlık Paktı (500$)
-                                 </button>
-                             </div>
-                         )}
-                     </div>
-                 ) : (
-                     <div className="text-gray-500 text-center text-sm italic mt-10">
-                        Haritadan bir kare seçin...
-                     </div>
-                 )}
-             </div>
+                    const uType = UNITS[selectedTile.unit.type];
+                    if (dist <= uType.range) {
+                        if (myPlayer.resources.ammo >= uType.ammoCost) {
+                             const mapCopy = JSON.parse(JSON.stringify(gameData.map));
+                             const target = mapCopy[y][x];
+                             
+                             if (target.unit) {
+                                 target.unit.hp -= uType.damage;
+                                 if (target.unit.hp <= 0) target.unit = null;
+                             } else if (target.structureType) {
+                                 target.hp = (target.hp || 500) - uType.damage;
+                                 if (target.hp <= 0) { target.structureType = null; target.owner = null; }
+                             }
 
-             {/* Market Mini View */}
-             <div className="p-2 border-t border-gray-700 bg-gray-900 h-48 overflow-y-auto">
-                 <h4 className="text-xs font-bold text-gray-400 mb-2 flex items-center gap-1"><ShoppingCart size={12}/> KARABORSA</h4>
-                 
-                 {/* Post Offer UI */}
-                 <div className="flex gap-1 mb-2">
-                     <select id="mRes" className="bg-gray-700 text-xs rounded w-16">
-                         <option value="OIL">Petrol</option>
-                         <option value="WHEAT">Buğday</option>
-                     </select>
-                     <input id="mAmt" type="number" placeholder="Adet" className="bg-gray-700 text-xs w-12 rounded pl-1" defaultValue={100}/>
-                     <input id="mPrc" type="number" placeholder="Fiyat" className="bg-gray-700 text-xs w-12 rounded pl-1" defaultValue={200}/>
-                     <button 
-                        onClick={() => postMarketOffer(document.getElementById('mRes').value, document.getElementById('mAmt').value, document.getElementById('mPrc').value)}
-                        className="bg-green-700 hover:bg-green-600 text-xs px-2 rounded"
-                     >+</button>
-                 </div>
+                             await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`), {
+                                 map: mapCopy,
+                                 [`players.${currentUser.uid}.resources.ammo`]: increment(-uType.ammoCost)
+                             });
+                             selectedTile = null; renderSelectionPanel(); return;
+                        } else { showNotification("Yetersiz Mühimmat!"); }
+                    } else { showNotification("Menzil dışı!"); }
+                    return;
+                }
+            }
 
-                 <div className="space-y-1">
-                     {marketOffers.map(offer => (
-                         <div key={offer.id} className="flex justify-between items-center bg-gray-800 p-1 rounded text-xs border border-gray-700">
-                             <div className="flex items-center gap-1">
-                                 <span>{offer.resource === 'OIL' ? '🛢️' : '🌾'}</span>
-                                 <span className="font-bold">{offer.amount}</span>
-                             </div>
-                             <div className="flex items-center gap-2">
-                                 <span className="text-green-400">{offer.price}$</span>
-                                 {offer.seller !== user.uid && (
-                                     <button onClick={() => buyMarketOffer(offer)} className="bg-green-800 px-1 rounded hover:bg-green-700">Al</button>
-                                 )}
-                             </div>
-                         </div>
-                     ))}
-                 </div>
-             </div>
-          </div>
+            selectedTile = { ...clicked }; // Copy data to avoid ref issues
+            renderSelectionPanel();
+            updateGameUI(); // To highlight ring
+        };
 
-          {/* MAIN MAP AREA */}
-          <div className="flex-1 overflow-auto bg-black relative cursor-move" style={{
-              backgroundImage: 'radial-gradient(#333 1px, transparent 1px)',
-              backgroundSize: '20px 20px'
-          }}>
-              {/* Map Grid */}
-              <div className="p-10 min-w-max min-h-max">
-                  <div 
-                    className="grid gap-px bg-gray-800 border-4 border-gray-700 shadow-2xl"
-                    style={{ gridTemplateColumns: `repeat(${MAP_SIZE}, 60px)` }}
-                  >
-                      {gameData.map.map((row, y) => (
-                          row.map((tile, x) => {
-                              // Render Logic
-                              const isSelected = selectedTile?.x === x && selectedTile?.y === y;
-                              const ownerData = tile.owner ? gameData.players[tile.owner] : null;
-                              
-                              let bgClass = "bg-[#2d3748]"; // Base ground
-                              if (tile.resourceType === 'oil') bgClass = "bg-gray-800";
-                              if (tile.resourceType === 'wheat') bgClass = "bg-yellow-900/30";
-                              if (tile.resourceType === 'dollar') bgClass = "bg-green-900/30";
-                              
-                              return (
-                                  <div 
-                                    key={`${x}-${y}`}
-                                    onClick={() => handleTileClick(x, y)}
-                                    className={`
-                                        w-[60px] h-[60px] relative flex items-center justify-center select-none transition-all duration-100
-                                        ${bgClass}
-                                        ${isSelected ? 'ring-4 ring-yellow-400 z-10 scale-105' : 'hover:bg-opacity-80 hover:ring-2 hover:ring-gray-500'}
-                                    `}
-                                  >
-                                      {/* Ownership Indicator */}
-                                      {tile.owner && (
-                                          <div className={`absolute inset-0 opacity-20 ${ownerData?.country.color || 'bg-white'}`} />
-                                      )}
-                                      
-                                      {/* Resource / Structure Icon */}
-                                      {tile.structureType === 'MINE_WILD' && (
-                                          <div className="absolute text-xl opacity-70 animate-pulse">
-                                              {tile.resourceType === 'oil' ? '🛢️' : tile.resourceType === 'wheat' ? '🌾' : '💵'}
-                                          </div>
-                                      )}
-                                      
-                                      {/* Building */}
-                                      {tile.structureType && tile.structureType !== 'MINE_WILD' && (
-                                          <div className="absolute z-10 text-2xl drop-shadow-md">
-                                              {tile.structureType === 'MINE' ? 
-                                                (tile.resourceType === 'oil' ? '🛢️' : tile.resourceType === 'wheat' ? '🌾' : '💵') : 
-                                                BUILDINGS[tile.structureType]?.icon
-                                              }
-                                              {/* Level Indicator Dot */}
-                                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-black"></div>
-                                          </div>
-                                      )}
+        const renderSelectionPanel = () => {
+            const panel = el('selection-content');
+            const noSel = el('no-selection');
+            const actions = el('sel-actions');
+            
+            if (!selectedTile) {
+                panel.classList.add('hidden');
+                noSel.classList.remove('hidden');
+                return;
+            }
 
-                                      {/* Unit */}
-                                      {tile.unit && (
-                                          <div className="absolute z-20 text-3xl transform hover:-translate-y-1 transition drop-shadow-xl">
-                                              {UNITS[tile.unit.type].icon}
-                                              {/* HP Bar */}
-                                              <div className="absolute -bottom-1 left-0 w-full h-1 bg-gray-700 rounded-full overflow-hidden">
-                                                  <div className="h-full bg-green-500" style={{width: `${(tile.unit.hp / tile.unit.maxHp) * 100}%`}}></div>
-                                              </div>
-                                          </div>
-                                      )}
+            noSel.classList.add('hidden');
+            panel.classList.remove('hidden');
+            
+            el('sel-title').innerText = `SEÇİLİ BÖLGE (${selectedTile.x}, ${selectedTile.y})`;
+            
+            // Owner Info
+            const ownerP = selectedTile.owner ? gameData.players[selectedTile.owner] : null;
+            el('sel-owner').innerHTML = ownerP ? 
+                `<span class="text-lg mr-2">${ownerP.country.flag}</span> <span class="font-bold text-${selectedTile.owner === currentUser.uid ? 'green' : 'red'}-400">${ownerP.name}</span>` : 
+                `<span class="text-gray-400">Sahipsiz Toprak</span>`;
 
-                                      {/* Flag Overlay for Owner */}
-                                      {ownerData && !tile.unit && (
-                                          <div className="absolute bottom-1 right-1 text-[10px] opacity-60">
-                                              {ownerData.country.flag}
-                                          </div>
-                                      )}
-                                  </div>
-                              );
-                          })
-                      ))}
-                  </div>
-              </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+            // Struct
+            const sDiv = el('sel-structure');
+            if (selectedTile.structureType) {
+                sDiv.classList.remove('hidden');
+                const name = (selectedTile.structureType === 'MINE' || selectedTile.structureType === 'MINE_WILD') ? 
+                    `MADEN (${selectedTile.resourceType})` : BUILDINGS[selectedTile.structureType]?.name;
+                sDiv.innerHTML = `<div class="flex justify-between font-bold"><span>${name}</span> <span class="text-xs text-gray-400">HP: ${selectedTile.hp}</span></div>`;
+            } else sDiv.classList.add('hidden');
+
+            // Unit
+            const uDiv = el('sel-unit');
+            if (selectedTile.unit) {
+                uDiv.classList.remove('hidden');
+                const u = UNITS[selectedTile.unit.type];
+                uDiv.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">${u.icon} ${u.name}</span>
+                        <div class="text-right text-xs">
+                            <div class="text-green-400">HP: ${selectedTile.unit.hp}</div>
+                            <div class="text-red-400">DMG: ${u.damage}</div>
+                        </div>
+                    </div>`;
+            } else uDiv.classList.add('hidden');
+
+            // ACTIONS
+            actions.innerHTML = '';
+            
+            if (selectedTile.owner === currentUser.uid) {
+                // Build
+                if (!selectedTile.structureType && !selectedTile.unit) {
+                    Object.entries(BUILDINGS).filter(([k]) => k !== 'HQ').forEach(([key, b]) => {
+                        const btn = document.createElement('button');
+                        btn.className = "w-full bg-gray-700 hover:bg-gray-600 p-2 rounded text-left text-xs border border-gray-600 flex justify-between";
+                        btn.innerHTML = `<span>${b.icon} ${b.name}</span> <span class="text-[10px] text-gray-400">${b.cost.oil}🛢️ ${b.cost.dollar}💵</span>`;
+                        btn.onclick = () => buildAction(key);
+                        actions.appendChild(btn);
+                    });
+                }
+                // Train
+                if (selectedTile.structureType === 'BARRACKS' && !selectedTile.unit) {
+                    Object.entries(UNITS).forEach(([key, u]) => {
+                        const btn = document.createElement('button');
+                        btn.className = "w-full bg-gray-700 hover:bg-gray-600 p-2 rounded text-left text-xs border border-gray-600 flex justify-between";
+                        btn.innerHTML = `<span>${u.icon} ${u.name}</span> <span class="text-[10px] text-gray-400">${u.cost.oil}🛢️ ${u.cost.dollar}💵</span>`;
+                        btn.onclick = () => trainAction(key);
+                        actions.appendChild(btn);
+                    });
+                }
+            } else if (selectedTile.owner) {
+                // Enemy Actions
+                const btn = document.createElement('button');
+                btn.className = "w-full bg-blue-900 hover:bg-blue-800 text-white p-2 rounded text-xs border border-blue-700";
+                btn.innerHTML = `🤝 Pakt Teklif Et (500$)`;
+                btn.onclick = () => offerPact(selectedTile.owner);
+                actions.appendChild(btn);
+            }
+        };
+
+        // --- ACTION HANDLERS ---
+        const buildAction = async (key) => {
+            const myPlayer = gameData.players[currentUser.uid];
+            const b = BUILDINGS[key];
+            if (myPlayer.resources.oil < b.cost.oil || myPlayer.resources.dollar < b.cost.dollar || myPlayer.resources.wheat < b.cost.wheat) {
+                showNotification("Kaynak Yetersiz!"); return;
+            }
+            const mapCopy = JSON.parse(JSON.stringify(gameData.map));
+            const tile = mapCopy[selectedTile.y][selectedTile.x];
+            tile.structureType = key;
+            tile.owner = currentUser.uid;
+            tile.hp = 500;
+
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`), {
+                map: mapCopy,
+                [`players.${currentUser.uid}.resources.oil`]: increment(-b.cost.oil),
+                [`players.${currentUser.uid}.resources.wheat`]: increment(-b.cost.wheat),
+                [`players.${currentUser.uid}.resources.dollar`]: increment(-b.cost.dollar)
+            });
+            selectedTile = null; renderSelectionPanel();
+        };
+
+        const trainAction = async (key) => {
+             const myPlayer = gameData.players[currentUser.uid];
+             const u = UNITS[key];
+             if (myPlayer.resources.oil < u.cost.oil || myPlayer.resources.dollar < u.cost.dollar) {
+                showNotification("Kaynak Yetersiz!"); return;
+            }
+            const mapCopy = JSON.parse(JSON.stringify(gameData.map));
+            const tile = mapCopy[selectedTile.y][selectedTile.x];
+            tile.unit = { type: key, hp: u.hp, maxHp: u.hp, owner: currentUser.uid };
+
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`), {
+                map: mapCopy,
+                [`players.${currentUser.uid}.resources.oil`]: increment(-u.cost.oil),
+                [`players.${currentUser.uid}.resources.wheat`]: increment(-u.cost.wheat),
+                [`players.${currentUser.uid}.resources.dollar`]: increment(-u.cost.dollar)
+            });
+            selectedTile = null; renderSelectionPanel();
+        };
+
+        const offerPact = async (targetId) => {
+             const myPlayer = gameData.players[currentUser.uid];
+             if (myPlayer.resources.dollar < 500) { showNotification("500$ Gerekli"); return; }
+             const expiry = Date.now() + 300000;
+             await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`), {
+                [`players.${currentUser.uid}.diplomacy.${targetId}`]: expiry,
+                [`players.${targetId}.diplomacy.${currentUser.uid}`]: expiry,
+                [`players.${currentUser.uid}.resources.dollar`]: increment(-500)
+             });
+             showNotification("Pakt İmzalandı!");
+        };
+
+        // Quick Buy Handlers
+        el('btn-buy-ammo').onclick = async () => {
+             const p = gameData.players[currentUser.uid];
+             if (p.resources.wheat < 50 || p.resources.oil < 50) return showNotification("Kaynak Eksik");
+             await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`), {
+                 [`players.${currentUser.uid}.resources.wheat`]: increment(-50),
+                 [`players.${currentUser.uid}.resources.oil`]: increment(-50),
+                 [`players.${currentUser.uid}.resources.ammo`]: increment(50)
+             });
+        };
+        el('btn-buy-move').onclick = async () => {
+             const p = gameData.players[currentUser.uid];
+             if (p.resources.dollar < 50 || p.resources.oil < 50) return showNotification("Kaynak Eksik");
+             await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`), {
+                 [`players.${currentUser.uid}.resources.dollar`]: increment(-50),
+                 [`players.${currentUser.uid}.resources.oil`]: increment(-50),
+                 [`players.${currentUser.uid}.resources.move`]: increment(50)
+             });
+        };
+
+        // Market Handlers
+        el('btn-post-offer').onclick = async () => {
+            const res = el('market-res').value;
+            const amt = parseInt(el('market-amt').value);
+            const prc = parseInt(el('market-price').value);
+            const p = gameData.players[currentUser.uid];
+            if (p.resources[res.toLowerCase()] < amt) return showNotification("Kaynak Yetersiz");
+
+            const offer = { id: Date.now().toString(), seller: currentUser.uid, resource: res, amount: amt, price: prc };
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`), {
+                market: arrayUnion(offer),
+                [`players.${currentUser.uid}.resources.${res.toLowerCase()}`]: increment(-amt)
+            });
+            showNotification("İlan Eklendi");
+        };
+
+        window.buyMarketOffer = async (offer) => {
+            const p = gameData.players[currentUser.uid];
+            if (p.resources.dollar < offer.price) return showNotification("Para Yetersiz");
+            
+            const newMarket = gameData.market.filter(o => o.id !== offer.id);
+            if (newMarket.length === gameData.market.length) return showNotification("İlan bitmiş");
+
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', `game_${currentGameCode}`), {
+                market: newMarket,
+                [`players.${currentUser.uid}.resources.dollar`]: increment(-offer.price),
+                [`players.${currentUser.uid}.resources.${offer.resource.toLowerCase()}`]: increment(offer.amount),
+                [`players.${offer.seller}.resources.dollar`]: increment(offer.price)
+            });
+        };
+
+    </script>
+</body>
+</html>
