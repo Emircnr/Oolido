@@ -1,3577 +1,947 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taktik Komuta - Çok Oyunculu RTS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #00ff88;
-            --primary-dark: #00cc6a;
-            --secondary: #ff6b35;
-            --danger: #ff3366;
-            --warning: #ffcc00;
-            --bg-dark: #0a0f1a;
-            --bg-panel: #111827;
-            --bg-card: #1f2937;
-            --text-primary: #ffffff;
-            --text-secondary: #9ca3af;
-            --border-color: #374151;
-            --grid-line: rgba(0, 255, 136, 0.1);
-        }
-
-        body {
-            font-family: 'Rajdhani', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        /* Main Menu */
-        #main-menu {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #0a0f1a 0%, #1a1f2e 50%, #0a0f1a 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        #main-menu.hidden {
-            display: none;
-        }
-
-        .menu-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(ellipse at 20% 80%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(255, 107, 53, 0.1) 0%, transparent 50%);
-            pointer-events: none;
-        }
-
-        .menu-grid {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(var(--grid-line) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: gridMove 20s linear infinite;
-            pointer-events: none;
-        }
-
-        @keyframes gridMove {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
-        }
-
-        .game-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 4rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 0 60px rgba(0, 255, 136, 0.5);
-            position: relative;
-            z-index: 1;
-        }
-
-        .game-subtitle {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            letter-spacing: 0.5em;
-            margin-bottom: 3rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .menu-container {
-            background: rgba(17, 24, 39, 0.9);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 2.5rem;
-            width: 400px;
-            backdrop-filter: blur(10px);
-            position: relative;
-            z-index: 1;
-        }
-
-        .menu-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .menu-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .section-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.9rem;
-            color: var(--primary);
-            margin-bottom: 0.75rem;
-            letter-spacing: 0.1em;
-        }
-
-        .input-group {
-            margin-bottom: 1rem;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.4rem;
-        }
-
-        .input-group input, .input-group select {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: var(--bg-dark);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .input-group input:focus, .input-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 1rem;
-            border: none;
-            border-radius: 8px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--bg-dark);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            border: 2px solid var(--secondary);
-            color: var(--secondary);
-        }
-
-        .btn-secondary:hover {
-            background: var(--secondary);
-            color: var(--bg-dark);
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            margin: 1.5rem 0;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-
-        .divider::before, .divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border-color);
-        }
-
-        .divider span {
-            padding: 0 1rem;
-        }
-
-        /* Lobby */
-        #lobby {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-dark);
-            display: none;
-            flex-direction: column;
-            z-index: 900;
-        }
-
-        #lobby.active {
-            display: flex;
-        }
-
-        .lobby-header {
-            padding: 1.5rem 2rem;
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .room-code {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            color: var(--primary);
-            letter-spacing: 0.2em;
-        }
-
-        .room-code span {
-            background: var(--bg-dark);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--primary);
-        }
-
-        .lobby-content {
-            flex: 1;
-            display: flex;
-            padding: 2rem;
-            gap: 2rem;
-            overflow: hidden;
-        }
-
-        .players-list {
-            flex: 1;
-            background: var(--bg-panel);
-            border-radius: 12px;
-            padding: 1.5rem;
-            overflow-y: auto;
-        }
-
-        .players-list h3 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--primary);
-            margin-bottom: 1rem;
-            font-size: 1rem;
-        }
-
-        .player-card {
-            background: var(--bg-card);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-
-        .player-card.ready {
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
-        }
-
-        .player-flag {
-            font-size: 2rem;
-        }
-
-        .player-info {
-            flex: 1;
-        }
-
-        .player-name {
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
-        .player-country {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .player-status {
-            font-size: 0.85rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            background: var(--bg-dark);
-        }
-
-        .player-status.ready {
-            background: var(--primary);
-            color: var(--bg-dark);
-        }
-
-        .lobby-sidebar {
-            width: 300px;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .lobby-chat {
-            flex: 1;
-            background: var(--bg-panel);
-            border-radius: 12px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 1rem;
-        }
-
-        .chat-message {
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .chat-message .sender {
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        .chat-input {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .chat-input input {
-            flex: 1;
-            padding: 0.5rem;
-            background: var(--bg-dark);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: 'Rajdhani', sans-serif;
-        }
-
-        .chat-input button {
-            padding: 0.5rem 1rem;
-            background: var(--primary);
-            border: none;
-            border-radius: 6px;
-            color: var(--bg-dark);
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .lobby-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .btn-small {
-            padding: 0.75rem;
-            font-size: 0.9rem;
-        }
-
-        /* Game Container */
-        #game-container {
-            display: none;
-            width: 100%;
-            height: 100%;
-        }
-
-        #game-container.active {
-            display: flex;
-        }
-
-        /* Top Bar */
-        .top-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: rgba(17, 24, 39, 0.95);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            padding: 0 1rem;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-        }
-
-        .resources-display {
-            display: flex;
-            gap: 1.5rem;
-            flex: 1;
-        }
-
-        .resource-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--bg-card);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        .resource-icon {
-            font-size: 1.3rem;
-        }
-
-        .resource-value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1rem;
-            font-weight: 700;
-        }
-
-        .resource-label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-
-        .game-timer {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            color: var(--primary);
-            padding: 0 2rem;
-        }
-
-        .player-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            background: var(--bg-card);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--primary);
-        }
-
-        .player-indicator .flag {
-            font-size: 1.5rem;
-        }
-
-        /* Game Area */
-        .game-area {
-            flex: 1;
-            display: flex;
-            margin-top: 60px;
-            height: calc(100vh - 60px);
-        }
-
-        /* Left Panel */
-        .left-panel {
-            width: 280px;
-            background: var(--bg-panel);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .panel-section {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .panel-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.85rem;
-            color: var(--primary);
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .build-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
-        }
-
-        .build-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 0.75rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .build-item:hover {
-            border-color: var(--primary);
-            transform: translateY(-2px);
-        }
-
-        .build-item.selected {
-            border-color: var(--primary);
-            background: rgba(0, 255, 136, 0.1);
-        }
-
-        .build-item .icon {
-            font-size: 1.5rem;
-            display: block;
-            margin-bottom: 0.25rem;
-        }
-
-        .build-item .name {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-
-        .build-item .cost {
-            font-size: 0.65rem;
-            color: var(--warning);
-            margin-top: 0.25rem;
-        }
-
-        .unit-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
-        }
-
-        .unit-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 0.75rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .unit-item:hover {
-            border-color: var(--secondary);
-            transform: translateY(-2px);
-        }
-
-        .unit-item.selected {
-            border-color: var(--secondary);
-            background: rgba(255, 107, 53, 0.1);
-        }
-
-        .unit-item .icon {
-            font-size: 1.5rem;
-            display: block;
-            margin-bottom: 0.25rem;
-        }
-
-        .unit-item .name {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-
-        .unit-item .stats {
-            font-size: 0.6rem;
-            color: var(--text-secondary);
-            margin-top: 0.25rem;
-        }
-
-        /* Map Container */
-        .map-container {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            background: #1a2634;
-        }
-
-        #game-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            cursor: crosshair;
-        }
-
-        /* Selection Info */
-        .selection-info {
-            position: absolute;
-            bottom: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(17, 24, 39, 0.95);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            display: none;
-            min-width: 300px;
-            backdrop-filter: blur(10px);
-        }
-
-        .selection-info.active {
-            display: block;
-        }
-
-        .selection-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .selection-icon {
-            font-size: 2rem;
-        }
-
-        .selection-name {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
-        }
-
-        .selection-owner {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .selection-stats {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.85rem;
-        }
-
-        .health-bar {
-            height: 8px;
-            background: var(--bg-dark);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .health-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--danger), var(--warning), var(--primary));
-            transition: width 0.3s ease;
-        }
-
-        .selection-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-        }
-
-        .action-btn {
-            flex: 1;
-            padding: 0.5rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .action-btn:hover {
-            border-color: var(--primary);
-            background: rgba(0, 255, 136, 0.1);
-        }
-
-        /* Right Panel */
-        .right-panel {
-            width: 280px;
-            background: var(--bg-panel);
-            border-left: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* Minimap */
-        .minimap-container {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        #minimap {
-            width: 100%;
-            height: 200px;
-            background: #0d1520;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        /* Players Panel */
-        .players-panel {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border-color);
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .player-row {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            background: var(--bg-card);
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .player-row:hover {
-            background: var(--bg-dark);
-        }
-
-        .player-row .flag {
-            font-size: 1.2rem;
-        }
-
-        .player-row .name {
-            flex: 1;
-            font-size: 0.85rem;
-        }
-
-        .player-row .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--primary);
-        }
-
-        .player-row .status-dot.enemy {
-            background: var(--danger);
-        }
-
-        .player-row .status-dot.ally {
-            background: var(--warning);
-        }
-
-        /* Diplomacy Panel */
-        .diplomacy-panel {
-            padding: 1rem;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .pact-item {
-            background: var(--bg-card);
-            border-radius: 8px;
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            border: 1px solid var(--warning);
-        }
-
-        .pact-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .pact-player {
-            font-weight: 600;
-        }
-
-        .pact-time {
-            font-size: 0.8rem;
-            color: var(--warning);
-        }
-
-        .pact-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .pact-btn {
-            flex: 1;
-            padding: 0.4rem;
-            border: none;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            cursor: pointer;
-        }
-
-        .pact-btn.accept {
-            background: var(--primary);
-            color: var(--bg-dark);
-        }
-
-        .pact-btn.reject {
-            background: var(--danger);
-            color: white;
-        }
-
-        /* Market Modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 500;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .modal-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.3rem;
-            color: var(--primary);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .market-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .market-tab {
-            flex: 1;
-            padding: 0.75rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-
-        .market-tab.active {
-            background: var(--primary);
-            color: var(--bg-dark);
-            border-color: var(--primary);
-        }
-
-        .market-listings {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .listing-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .listing-resource {
-            font-size: 2rem;
-        }
-
-        .listing-info {
-            flex: 1;
-        }
-
-        .listing-amount {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .listing-price {
-            font-size: 0.85rem;
-            color: var(--warning);
-        }
-
-        .listing-seller {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .listing-buy {
-            padding: 0.5rem 1rem;
-            background: var(--primary);
-            border: none;
-            border-radius: 6px;
-            color: var(--bg-dark);
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .create-listing {
-            background: var(--bg-card);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-
-        .create-listing h4 {
-            margin-bottom: 1rem;
-            color: var(--secondary);
-        }
-
-        .listing-form {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr auto;
-            gap: 0.75rem;
-            align-items: end;
-        }
-
-        .listing-form select,
-        .listing-form input {
-            padding: 0.5rem;
-            background: var(--bg-dark);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: 'Rajdhani', sans-serif;
-        }
-
-        .listing-form label {
-            display: block;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.25rem;
-        }
-
-        /* Diplomacy Modal */
-        .diplomacy-form {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .diplomacy-form select {
-            padding: 0.75rem;
-            background: var(--bg-dark);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: 'Rajdhani', sans-serif;
-        }
-
-        .time-options {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .time-option {
-            flex: 1;
-            padding: 0.75rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .time-option.selected {
-            border-color: var(--primary);
-            background: rgba(0, 255, 136, 0.1);
-        }
-
-        /* Notifications */
-        .notifications {
-            position: fixed;
-            top: 70px;
-            right: 1rem;
-            width: 300px;
-            z-index: 200;
-        }
-
-        .notification {
-            background: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 0.5rem;
-            animation: slideIn 0.3s ease;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-        }
-
-        .notification.success {
-            border-color: var(--primary);
-        }
-
-        .notification.warning {
-            border-color: var(--warning);
-        }
-
-        .notification.danger {
-            border-color: var(--danger);
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { 
+  getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, 
+  arrayUnion, increment 
+} from 'firebase/firestore';
+import { 
+  Zap, ShoppingCart, Handshake
+} from 'lucide-react';
+
+// --- FIREBASE SETUP ---
+const getFirebaseConfig = () => {
+  try {
+    if (typeof __firebase_config !== 'undefined') {
+      return JSON.parse(__firebase_config);
+    }
+  } catch (e) {
+    console.warn("Sistem config bulunamadı, fallback kullanılıyor.");
+  }
+  return {
+    apiKey: "AIzaSyCbolraCD1nrOqcIE5GHPAaX9SRhHQXYIY",
+    authDomain: "videoanlyze.firebaseapp.com",
+    projectId: "videoanlyze",
+    storageBucket: "videoanlyze.firebasestorage.app",
+    messagingSenderId: "1053069335615",
+    appId: "1:1053069335615:web:5dbf8f2345a5bf18b1ac8a",
+    measurementId: "G-TLEWYXX05H"
+  };
+};
+
+const app = initializeApp(getFirebaseConfig());
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'videoanlyze';
+
+// --- GAME CONSTANTS & DATA ---
+const MAP_SIZE = 32;
+const COUNTRIES = [
+  { code: 'TR', name: 'Türkiye', flag: '🇹🇷', color: 'bg-red-600' },
+  { code: 'US', name: 'ABD', flag: '🇺🇸', color: 'bg-blue-600' },
+  { code: 'RU', name: 'Rusya', flag: '🇷🇺', color: 'bg-red-800' },
+  { code: 'CN', name: 'Çin', flag: '🇨🇳', color: 'bg-yellow-600' },
+  { code: 'DE', name: 'Almanya', flag: '🇩🇪', color: 'bg-gray-800' },
+  { code: 'GB', name: 'İngiltere', flag: '🇬🇧', color: 'bg-blue-800' },
+  { code: 'FR', name: 'Fransa', flag: '🇫🇷', color: 'bg-blue-500' },
+  { code: 'JP', name: 'Japonya', flag: '🇯🇵', color: 'bg-red-400' },
+  { code: 'KR', name: 'Güney Kore', flag: '🇰🇷', color: 'bg-blue-400' },
+  { code: 'BR', name: 'Brezilya', flag: '🇧🇷', color: 'bg-green-600' },
+];
+
+const BUILDINGS = {
+  HQ: { id: 'HQ', name: 'Karargah', icon: '🏛️', cost: { oil: 0, wheat: 0, dollar: 0 } },
+  BARRACKS: { id: 'BARRACKS', name: 'Kışla', icon: '🏠', cost: { oil: 200, wheat: 100, dollar: 300 } },
+  TOWER: { id: 'TOWER', name: 'Savunma Kulesi', icon: '🗼', cost: { oil: 150, wheat: 50, dollar: 200 }, range: 3, damage: 20 },
+  RADAR: { id: 'RADAR', name: 'Radar', icon: '📡', cost: { oil: 100, wheat: 0, dollar: 500 }, range: 8 },
+  HOSPITAL: { id: 'HOSPITAL', name: 'Hastane', icon: '🏥', cost: { oil: 100, wheat: 300, dollar: 200 }, range: 2 },
+};
+
+const UNITS = {
+  INFANTRY: { id: 'INFANTRY', name: 'Piyade', icon: '🔫', cost: { oil: 50, wheat: 50, dollar: 50 }, hp: 100, damage: 15, range: 2, moveCost: 10, ammoCost: 10 },
+  HEAVY: { id: 'HEAVY', name: 'Ağır Piyade', icon: '💪', cost: { oil: 150, wheat: 100, dollar: 100 }, hp: 250, damage: 25, range: 1, moveCost: 20, ammoCost: 20 },
+  SNIPER: { id: 'SNIPER', name: 'Keskin Nişancı', icon: '🎯', cost: { oil: 50, wheat: 100, dollar: 200 }, hp: 60, damage: 60, range: 5, moveCost: 15, ammoCost: 30 },
+  SCOUT: { id: 'SCOUT', name: 'Keşifçi', icon: '🏃', cost: { oil: 100, wheat: 50, dollar: 50 }, hp: 80, damage: 5, range: 3, moveCost: 5, ammoCost: 5 },
+};
+
+const RESOURCES = {
+  OIL: { id: 'oil', name: 'Petrol', icon: '🛢️', color: 'text-gray-900' },
+  WHEAT: { id: 'wheat', name: 'Buğday', icon: '🌾', color: 'text-yellow-600' },
+  DOLLAR: { id: 'dollar', name: 'Dolar', icon: '💵', color: 'text-green-600' },
+  AMMO: { id: 'ammo', name: 'Mühimmat', icon: '🔹', color: 'text-blue-600' },
+  MOVE: { id: 'move', name: 'Hareket', icon: '👟', color: 'text-orange-600' },
+};
+
+// --- HELPER FUNCTIONS ---
+const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+// --- MAIN COMPONENT ---
+export default function TaktikKomuta() {
+  const [user, setUser] = useState(null);
+  const [gameState, setGameState] = useState('menu'); // menu, lobby, game
+  const [gameCode, setGameCode] = useState('');
+  const [gameData, setGameData] = useState(null);
+  const [myPlayer, setMyPlayer] = useState(null);
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
+  const [selectedTile, setSelectedTile] = useState(null);
+  const [notification, setNotification] = useState(null);
+  const [marketOffers, setMarketOffers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Refs for intervals to access latest state without resetting interval
+  const gameDataRef = useRef(null);
+  const myPlayerRef = useRef(null);
+  const userRef = useRef(null);
+
+  useEffect(() => {
+    gameDataRef.current = gameData;
+  }, [gameData]);
+
+  useEffect(() => {
+    myPlayerRef.current = myPlayer;
+  }, [myPlayer]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  // Auth Handling
+  useEffect(() => {
+    const initAuth = async () => {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    };
+    initAuth();
+    return onAuthStateChanged(auth, setUser);
+  }, []);
+
+  // Game Data Listener
+  useEffect(() => {
+    if (!user || !gameCode || gameState === 'menu') return;
+
+    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`);
+    const unsubscribe = onSnapshot(gameRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setGameData(data);
+        if (data.players && data.players[user.uid]) {
+          setMyPlayer(data.players[user.uid]);
+        }
+        if (data.market) setMarketOffers(data.market);
+      } else {
+        showNotification("Oyun bulunamadı veya sonlandı.");
+        setGameState('menu');
+      }
+    });
+    return () => unsubscribe();
+  }, [user, gameCode, gameState]);
+
+  // Resource Production Loop
+  // Fixed: Uses refs to avoid resetting the interval on every state change
+  useEffect(() => {
+    if (gameState !== 'game') return;
+
+    const interval = setInterval(async () => {
+      const gData = gameDataRef.current;
+      const mPlayer = myPlayerRef.current;
+      const cUser = userRef.current;
+
+      if (!gData || !mPlayer || !cUser) return;
+
+      let oilIncome = 0;
+      let wheatIncome = 0;
+      let dollarIncome = 0;
+
+      // Scan map for owned mines
+      gData.map.forEach(row => {
+        row.forEach(tile => {
+            if (tile.owner === cUser.uid && (tile.structureType === 'MINE' || tile.structureType === 'MINE_WILD')) {
+                // If the player captured a MINE_WILD, we consider it a MINE for production
+                if (tile.resourceType === 'oil') oilIncome += tile.production || 10;
+                if (tile.resourceType === 'wheat') wheatIncome += tile.production || 10;
+                if (tile.resourceType === 'dollar') dollarIncome += tile.production || 10;
             }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
+        });
+      });
 
-        .notification-icon {
-            font-size: 1.2rem;
+      // Update Firestore only if there is income
+      if (oilIncome > 0 || wheatIncome > 0 || dollarIncome > 0) {
+        const gameRef = doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`);
+        try {
+            await updateDoc(gameRef, {
+                [`players.${cUser.uid}.resources.oil`]: increment(oilIncome),
+                [`players.${cUser.uid}.resources.wheat`]: increment(wheatIncome),
+                [`players.${cUser.uid}.resources.dollar`]: increment(dollarIncome)
+            });
+            // Optional: Show small +income floating text (not implemented for simplicity)
+        } catch (e) {
+            console.error("Income sync error:", e);
         }
+      }
+    }, 10000); // Every 10 seconds
 
-        .notification-content {
-            flex: 1;
-        }
+    return () => clearInterval(interval);
+  }, [gameState, gameCode]); // Only restart if game state changes
 
-        .notification-title {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
+  const showNotification = (msg) => {
+    setNotification(msg);
+    setTimeout(() => setNotification(null), 3000);
+  };
 
-        .notification-text {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
+  // --- ACTIONS ---
 
-        /* Game Over Modal */
-        .game-over-modal {
-            text-align: center;
-        }
-
-        .game-over-modal h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .game-over-modal.victory h2 {
-            color: var(--primary);
-        }
-
-        .game-over-modal.defeat h2 {
-            color: var(--danger);
-        }
-
-        .game-over-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-
-        .stat-box {
-            background: var(--bg-card);
-            padding: 1rem;
-            border-radius: 8px;
-        }
-
-        .stat-box .value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            color: var(--primary);
-        }
-
-        .stat-box .label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        /* Loading Overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-dark);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .loading-overlay.hidden {
-            display: none;
-        }
-
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 3px solid var(--border-color);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            margin-top: 1rem;
-            font-family: 'Orbitron', sans-serif;
-            color: var(--primary);
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary);
-        }
-
-        /* Country Selection */
-        .country-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 0.5rem;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 0.5rem;
-            background: var(--bg-dark);
-            border-radius: 8px;
-        }
-
-        .country-option {
-            padding: 0.5rem;
-            text-align: center;
-            background: var(--bg-card);
-            border: 2px solid transparent;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .country-option:hover {
-            border-color: var(--border-color);
-        }
-
-        .country-option.selected {
-            border-color: var(--primary);
-            background: rgba(0, 255, 136, 0.1);
-        }
-
-        .country-option .flag {
-            font-size: 1.5rem;
-        }
-
-        .country-option .name {
-            font-size: 0.65rem;
-            color: var(--text-secondary);
-            margin-top: 0.25rem;
-        }
-
-        /* Upgrade Panel */
-        .upgrade-panel {
-            position: absolute;
-            background: var(--bg-panel);
-            border: 1px solid var(--primary);
-            border-radius: 8px;
-            padding: 1rem;
-            z-index: 150;
-            min-width: 200px;
-            display: none;
-        }
-
-        .upgrade-panel.active {
-            display: block;
-        }
-
-        .upgrade-option {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem;
-            background: var(--bg-card);
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .upgrade-option:hover {
-            background: rgba(0, 255, 136, 0.1);
-        }
-
-        .upgrade-cost {
-            font-size: 0.8rem;
-            color: var(--warning);
-        }
-    </style>
-</head>
-<body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loading-overlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Bağlanılıyor...</div>
-    </div>
-
-    <!-- Main Menu -->
-    <div id="main-menu">
-        <div class="menu-bg"></div>
-        <div class="menu-grid"></div>
-        <h1 class="game-title">Taktik Komuta</h1>
-        <p class="game-subtitle">Çok Oyunculu RTS</p>
+  const createGame = async () => {
+    if (!user) return;
+    setLoading(true);
+    const code = generateCode();
+    
+    // Generate Map
+    const newMap = [];
+    for (let y = 0; y < MAP_SIZE; y++) {
+      const row = [];
+      for (let x = 0; x < MAP_SIZE; x++) {
+        let type = 'ground';
+        let resource = null;
+        let production = 0;
         
-        <div class="menu-container">
-            <div class="menu-section">
-                <div class="input-group">
-                    <label>Oyuncu Adı</label>
-                    <input type="text" id="player-name" placeholder="Adınızı girin..." maxlength="20">
-                </div>
-                <div class="section-title">🏳️ Ülke Seç</div>
-                <div class="country-grid" id="country-grid"></div>
-            </div>
+        // Random Resources (10% chance)
+        if (Math.random() < 0.10) {
+            const rRand = Math.random();
+            if (rRand < 0.33) { resource = 'oil'; production = getRandomInt(500, 2000); }
+            else if (rRand < 0.66) { resource = 'wheat'; production = getRandomInt(500, 2000); }
+            else { resource = 'dollar'; production = getRandomInt(500, 2000); }
+        }
+        
+        row.push({
+            x, y, type, 
+            resourceType: resource, 
+            maxReserve: production * 10,
+            production: Math.floor(production / 50),
+            structureType: resource ? 'MINE_WILD' : null,
+            unit: null,
+            owner: null
+        });
+      }
+      newMap.push(row);
+    }
 
-            <div class="divider"><span>OYUN MODU</span></div>
+    const initialData = {
+      code,
+      host: user.uid,
+      status: 'lobby',
+      createdAt: Date.now(),
+      players: {
+        [user.uid]: {
+            id: user.uid,
+            name: `Komutan ${user.uid.slice(0,4)}`,
+            country: selectedCountry,
+            ready: false,
+            resources: { oil: 500, wheat: 500, dollar: 500, ammo: 50, move: 50 },
+            diplomacy: {}
+        }
+      },
+      map: newMap,
+      market: []
+    };
 
-            <div class="menu-section">
-                <button class="btn btn-primary" id="create-room-btn">🎮 Yeni Oyun Oluştur</button>
-            </div>
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${code}`), initialData);
+      setGameCode(code);
+      setGameState('lobby');
+    } catch (error) {
+      console.error(error);
+      showNotification("Oyun oluşturulamadı. İzinleri kontrol edin.");
+    }
+    setLoading(false);
+  };
 
-            <div class="menu-section">
-                <div class="input-group">
-                    <label>Oda Kodu</label>
-                    <input type="text" id="room-code-input" placeholder="6 haneli kod" maxlength="6" style="text-transform: uppercase;">
-                </div>
-                <button class="btn btn-secondary" id="join-room-btn">🚀 Odaya Katıl</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Lobby -->
-    <div id="lobby">
-        <div class="lobby-header">
-            <div>
-                <h2>Oyun Lobisi</h2>
-                <div class="room-code">Oda Kodu: <span id="display-room-code">------</span></div>
-            </div>
-            <button class="btn btn-secondary btn-small" id="leave-lobby-btn">Ayrıl</button>
-        </div>
-        <div class="lobby-content">
-            <div class="players-list">
-                <h3>👥 Oyuncular (0/10)</h3>
-                <div id="lobby-players"></div>
-            </div>
-            <div class="lobby-sidebar">
-                <div class="lobby-chat">
-                    <h3 style="margin-bottom: 0.5rem; color: var(--primary);">💬 Sohbet</h3>
-                    <div class="chat-messages" id="lobby-chat-messages"></div>
-                    <div class="chat-input">
-                        <input type="text" id="lobby-chat-input" placeholder="Mesaj yaz...">
-                        <button id="lobby-chat-send">Gönder</button>
-                    </div>
-                </div>
-                <div class="lobby-actions">
-                    <button class="btn btn-primary" id="ready-btn">✓ Hazırım</button>
-                    <button class="btn btn-secondary" id="start-game-btn" style="display: none;">🎯 Oyunu Başlat</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Game Container -->
-    <div id="game-container">
-        <!-- Top Bar -->
-        <div class="top-bar">
-            <div class="resources-display">
-                <div class="resource-item">
-                    <span class="resource-icon">🛢️</span>
-                    <div>
-                        <div class="resource-value" id="oil-count">0</div>
-                        <div class="resource-label">Petrol</div>
-                    </div>
-                </div>
-                <div class="resource-item">
-                    <span class="resource-icon">🌾</span>
-                    <div>
-                        <div class="resource-value" id="wheat-count">0</div>
-                        <div class="resource-label">Buğday</div>
-                    </div>
-                </div>
-                <div class="resource-item">
-                    <span class="resource-icon">💵</span>
-                    <div>
-                        <div class="resource-value" id="dollar-count">0</div>
-                        <div class="resource-label">Dolar</div>
-                    </div>
-                </div>
-                <div class="resource-item">
-                    <span class="resource-icon">🔹</span>
-                    <div>
-                        <div class="resource-value" id="ammo-count">0</div>
-                        <div class="resource-label">Mühimmat</div>
-                    </div>
-                </div>
-                <div class="resource-item">
-                    <span class="resource-icon">👟</span>
-                    <div>
-                        <div class="resource-value" id="movement-count">0</div>
-                        <div class="resource-label">Hareket</div>
-                    </div>
-                </div>
-            </div>
-            <div class="game-timer" id="game-timer">00:00</div>
-            <div class="player-indicator">
-                <span class="flag" id="my-flag">🇹🇷</span>
-                <span id="my-name">Oyuncu</span>
-            </div>
-            <button class="btn btn-secondary btn-small" style="margin-left: 1rem;" id="market-btn">🛒 Market</button>
-            <button class="btn btn-secondary btn-small" style="margin-left: 0.5rem;" id="diplomacy-btn">🤝 Diplomasi</button>
-        </div>
-
-        <!-- Game Area -->
-        <div class="game-area">
-            <!-- Left Panel -->
-            <div class="left-panel">
-                <div class="panel-section">
-                    <div class="panel-title">🏗️ Binalar</div>
-                    <div class="build-grid" id="build-grid"></div>
-                </div>
-                <div class="panel-section">
-                    <div class="panel-title">👥 Askerler</div>
-                    <div class="unit-grid" id="unit-grid"></div>
-                </div>
-                <div class="panel-section">
-                    <div class="panel-title">🛒 Hızlı Alım</div>
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <button class="action-btn" id="buy-ammo-btn">🔹 Mühimmat Al (10🌾 + 10🛢️)</button>
-                        <button class="action-btn" id="buy-movement-btn">👟 Hareket Al (10🛢️ + 10💵)</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Map Container -->
-            <div class="map-container" id="map-container">
-                <canvas id="game-canvas"></canvas>
-                
-                <!-- Selection Info -->
-                <div class="selection-info" id="selection-info">
-                    <div class="selection-header">
-                        <span class="selection-icon" id="selection-icon">🏛️</span>
-                        <div>
-                            <div class="selection-name" id="selection-name">Karargah</div>
-                            <div class="selection-owner" id="selection-owner">Senin</div>
-                        </div>
-                    </div>
-                    <div class="selection-stats" id="selection-stats"></div>
-                    <div class="health-bar">
-                        <div class="health-fill" id="selection-health" style="width: 100%"></div>
-                    </div>
-                    <div class="selection-actions" id="selection-actions"></div>
-                </div>
-            </div>
-
-            <!-- Right Panel -->
-            <div class="right-panel">
-                <div class="minimap-container">
-                    <div class="panel-title">🗺️ Mini Harita</div>
-                    <canvas id="minimap"></canvas>
-                </div>
-                <div class="players-panel">
-                    <div class="panel-title">👥 Oyuncular</div>
-                    <div id="players-list"></div>
-                </div>
-                <div class="diplomacy-panel">
-                    <div class="panel-title">🤝 Paktlar</div>
-                    <div id="pacts-list"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Market Modal -->
-    <div class="modal" id="market-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">🛒 Market</h3>
-                <button class="modal-close" id="close-market">&times;</button>
-            </div>
-            <div class="market-tabs">
-                <button class="market-tab active" data-tab="buy">Satın Al</button>
-                <button class="market-tab" data-tab="sell">Sat</button>
-                <button class="market-tab" data-tab="send">Gönder</button>
-            </div>
-            <div id="market-content">
-                <div class="market-listings" id="market-listings"></div>
-                <div class="create-listing" id="create-listing-section" style="display: none;">
-                    <h4>Yeni İlan Oluştur</h4>
-                    <div class="listing-form">
-                        <div>
-                            <label>Kaynak</label>
-                            <select id="sell-resource">
-                                <option value="oil">🛢️ Petrol</option>
-                                <option value="wheat">🌾 Buğday</option>
-                                <option value="dollar">💵 Dolar</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Miktar</label>
-                            <input type="number" id="sell-amount" min="1" value="100">
-                        </div>
-                        <div>
-                            <label>Fiyat (💵)</label>
-                            <input type="number" id="sell-price" min="1" value="50">
-                        </div>
-                        <button class="btn btn-primary btn-small" id="create-listing-btn">İlan Ver</button>
-                    </div>
-                </div>
-                <div id="send-section" style="display: none;">
-                    <h4>Kaynak Gönder</h4>
-                    <div class="listing-form" style="grid-template-columns: 1fr 1fr 1fr auto;">
-                        <div>
-                            <label>Oyuncu</label>
-                            <select id="send-player"></select>
-                        </div>
-                        <div>
-                            <label>Kaynak</label>
-                            <select id="send-resource">
-                                <option value="oil">🛢️ Petrol</option>
-                                <option value="wheat">🌾 Buğday</option>
-                                <option value="dollar">💵 Dolar</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Miktar</label>
-                            <input type="number" id="send-amount" min="1" value="100">
-                        </div>
-                        <button class="btn btn-primary btn-small" id="send-resource-btn">Gönder</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Diplomacy Modal -->
-    <div class="modal" id="diplomacy-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">🤝 Diplomasi</h3>
-                <button class="modal-close" id="close-diplomacy">&times;</button>
-            </div>
-            <div class="diplomacy-form">
-                <div>
-                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Oyuncu Seç</label>
-                    <select id="pact-player"></select>
-                </div>
-                <div>
-                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Süre Seç</label>
-                    <div class="time-options">
-                        <div class="time-option selected" data-time="300">5 dk</div>
-                        <div class="time-option" data-time="600">10 dk</div>
-                        <div class="time-option" data-time="1800">30 dk</div>
-                    </div>
-                </div>
-                <button class="btn btn-primary" id="send-pact-btn">📜 Pakt Teklifi Gönder</button>
-            </div>
-            <div style="margin-top: 1.5rem;">
-                <h4 style="color: var(--warning); margin-bottom: 1rem;">📨 Gelen Teklifler</h4>
-                <div id="incoming-pacts"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Notifications -->
-    <div class="notifications" id="notifications"></div>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
-
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCbolraCD1nrOqcIE5GHPAaX9SRhHQXYIY",
-            authDomain: "videoanlyze.firebaseapp.com",
-            projectId: "videoanlyze",
-            storageBucket: "videoanlyze.firebasestorage.app",
-            messagingSenderId: "1053069335615",
-            appId: "1:1053069335615:web:5dbf8f2345a5bf18b1ac8a",
-            measurementId: "G-TLEWYXX05H",
-            databaseURL: "https://videoanlyze-default-rtdb.firebaseio.com"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        // Game Constants
-        const GRID_SIZE = 32;
-        const TILE_SIZE = 64;
-        const MAP_WIDTH = GRID_SIZE * TILE_SIZE;
-        const MAP_HEIGHT = GRID_SIZE * TILE_SIZE;
-
-        // Countries Data
-        const COUNTRIES = [
-            { code: 'TR', name: 'Türkiye', flag: '🇹🇷' },
-            { code: 'US', name: 'ABD', flag: '🇺🇸' },
-            { code: 'RU', name: 'Rusya', flag: '🇷🇺' },
-            { code: 'CN', name: 'Çin', flag: '🇨🇳' },
-            { code: 'DE', name: 'Almanya', flag: '🇩🇪' },
-            { code: 'FR', name: 'Fransa', flag: '🇫🇷' },
-            { code: 'GB', name: 'İngiltere', flag: '🇬🇧' },
-            { code: 'JP', name: 'Japonya', flag: '🇯🇵' },
-            { code: 'BR', name: 'Brezilya', flag: '🇧🇷' },
-            { code: 'IN', name: 'Hindistan', flag: '🇮🇳' },
-            { code: 'KR', name: 'G. Kore', flag: '🇰🇷' },
-            { code: 'IT', name: 'İtalya', flag: '🇮🇹' },
-            { code: 'ES', name: 'İspanya', flag: '🇪🇸' },
-            { code: 'AU', name: 'Avustralya', flag: '🇦🇺' },
-            { code: 'CA', name: 'Kanada', flag: '🇨🇦' }
-        ];
-
-        // Buildings Data
-        const BUILDINGS = {
-            headquarters: { icon: '🏛️', name: 'Karargah', cost: { oil: 0, wheat: 0, dollar: 0 }, health: 1000 },
-            barracks: { icon: '🏠', name: 'Kışla', cost: { oil: 100, wheat: 100, dollar: 50 }, health: 500 },
-            tower: { icon: '🗼', name: 'Savunma Kulesi', cost: { oil: 150, wheat: 50, dollar: 100 }, health: 300, damage: 20, range: 150 },
-            radar: { icon: '📡', name: 'Radar', cost: { oil: 80, wheat: 30, dollar: 120 }, health: 200, range: 250 },
-            hospital: { icon: '🏥', name: 'Hastane', cost: { oil: 120, wheat: 150, dollar: 80 }, health: 400, healRate: 5, range: 120 }
-        };
-
-        // Units Data
-        const UNITS = {
-            infantry: { 
-                icon: '🔫', name: 'Piyade', 
-                cost: { oil: 20, wheat: 30, dollar: 10 },
-                health: 100, damage: 15, range: 80, speed: 2,
-                description: 'Dengeli'
-            },
-            heavy: { 
-                icon: '💪', name: 'Ağır Piyade', 
-                cost: { oil: 50, wheat: 60, dollar: 30 },
-                health: 250, damage: 30, range: 60, speed: 0.8,
-                description: 'Dayanıklı'
-            },
-            sniper: { 
-                icon: '🎯', name: 'Keskin Nişancı', 
-                cost: { oil: 40, wheat: 20, dollar: 50 },
-                health: 50, damage: 50, range: 200, speed: 1.2,
-                description: 'Uzun menzil'
-            },
-            scout: { 
-                icon: '🏃', name: 'Keşifçi', 
-                cost: { oil: 15, wheat: 15, dollar: 20 },
-                health: 60, damage: 8, range: 50, speed: 4,
-                description: 'Hızlı'
+  const joinGame = async (codeInput) => {
+    if (!user || !codeInput) return;
+    setLoading(true);
+    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', `game_${codeInput}`);
+    try {
+        const snap = await getDoc(gameRef);
+        if (snap.exists()) {
+            const data = snap.data();
+            if (data.status !== 'lobby') {
+                showNotification("Oyun çoktan başladı.");
+                setLoading(false);
+                return;
             }
-        };
-
-        // Resource Nodes
-        const RESOURCE_TYPES = {
-            oil: { icon: '🛢️', name: 'Petrol Kuyusu', upgradeCost: { oil: 50, dollar: 30 } },
-            wheat: { icon: '🌾', name: 'Değirmen', upgradeCost: { wheat: 50, dollar: 30 } },
-            dollar: { icon: '💵', name: 'Dolar Madeni', upgradeCost: { oil: 30, wheat: 30 } }
-        };
-
-        // Game State
-        let gameState = {
-            roomCode: null,
-            playerId: null,
-            playerName: '',
-            country: null,
-            isHost: false,
-            inGame: false,
-            resources: {
-                oil: 500,
-                wheat: 500,
-                dollar: 300,
-                ammo: 50,
-                movement: 100
-            },
-            buildings: [],
-            units: [],
-            selectedBuilding: null,
-            selectedUnit: null,
-            selectedEntity: null,
-            camera: { x: 0, y: 0 },
-            isDragging: false,
-            lastMousePos: { x: 0, y: 0 },
-            gameTime: 0,
-            players: {},
-            pacts: {},
-            marketListings: [],
-            map: {
-                tiles: [],
-                resourceNodes: []
-            }
-        };
-
-        // DOM Elements
-        const elements = {
-            mainMenu: document.getElementById('main-menu'),
-            lobby: document.getElementById('lobby'),
-            gameContainer: document.getElementById('game-container'),
-            loadingOverlay: document.getElementById('loading-overlay'),
-            playerNameInput: document.getElementById('player-name'),
-            countryGrid: document.getElementById('country-grid'),
-            roomCodeInput: document.getElementById('room-code-input'),
-            createRoomBtn: document.getElementById('create-room-btn'),
-            joinRoomBtn: document.getElementById('join-room-btn'),
-            displayRoomCode: document.getElementById('display-room-code'),
-            lobbyPlayers: document.getElementById('lobby-players'),
-            lobbyChatMessages: document.getElementById('lobby-chat-messages'),
-            lobbyChatInput: document.getElementById('lobby-chat-input'),
-            lobbyChatSend: document.getElementById('lobby-chat-send'),
-            readyBtn: document.getElementById('ready-btn'),
-            startGameBtn: document.getElementById('start-game-btn'),
-            leaveLobbyBtn: document.getElementById('leave-lobby-btn'),
-            canvas: document.getElementById('game-canvas'),
-            minimap: document.getElementById('minimap'),
-            mapContainer: document.getElementById('map-container'),
-            buildGrid: document.getElementById('build-grid'),
-            unitGrid: document.getElementById('unit-grid'),
-            selectionInfo: document.getElementById('selection-info'),
-            notifications: document.getElementById('notifications'),
-            marketModal: document.getElementById('market-modal'),
-            diplomacyModal: document.getElementById('diplomacy-modal'),
-            gameTimer: document.getElementById('game-timer')
-        };
-
-        // Canvas contexts
-        let ctx, minimapCtx;
-
-        // Initialize Country Grid
-        function initCountryGrid() {
-            elements.countryGrid.innerHTML = '';
-            COUNTRIES.forEach((country, index) => {
-                const div = document.createElement('div');
-                div.className = 'country-option' + (index === 0 ? ' selected' : '');
-                div.dataset.code = country.code;
-                div.innerHTML = `
-                    <div class="flag">${country.flag}</div>
-                    <div class="name">${country.name}</div>
-                `;
-                div.onclick = () => selectCountry(country.code);
-                elements.countryGrid.appendChild(div);
-            });
-            gameState.country = COUNTRIES[0];
-        }
-
-        function selectCountry(code) {
-            document.querySelectorAll('.country-option').forEach(el => el.classList.remove('selected'));
-            document.querySelector(`.country-option[data-code="${code}"]`).classList.add('selected');
-            gameState.country = COUNTRIES.find(c => c.code === code);
-        }
-
-        // Initialize Build Grid
-        function initBuildGrid() {
-            elements.buildGrid.innerHTML = '';
-            Object.entries(BUILDINGS).forEach(([key, building]) => {
-                if (key === 'headquarters') return;
-                const div = document.createElement('div');
-                div.className = 'build-item';
-                div.dataset.building = key;
-                div.innerHTML = `
-                    <span class="icon">${building.icon}</span>
-                    <span class="name">${building.name}</span>
-                    <span class="cost">${building.cost.oil}🛢️ ${building.cost.wheat}🌾 ${building.cost.dollar}💵</span>
-                `;
-                div.onclick = () => selectBuilding(key);
-                elements.buildGrid.appendChild(div);
-            });
-        }
-
-        function selectBuilding(key) {
-            document.querySelectorAll('.build-item').forEach(el => el.classList.remove('selected'));
-            if (gameState.selectedBuilding === key) {
-                gameState.selectedBuilding = null;
-            } else {
-                document.querySelector(`.build-item[data-building="${key}"]`).classList.add('selected');
-                gameState.selectedBuilding = key;
-                gameState.selectedUnit = null;
-                document.querySelectorAll('.unit-item').forEach(el => el.classList.remove('selected'));
-            }
-        }
-
-        // Initialize Unit Grid
-        function initUnitGrid() {
-            elements.unitGrid.innerHTML = '';
-            Object.entries(UNITS).forEach(([key, unit]) => {
-                const div = document.createElement('div');
-                div.className = 'unit-item';
-                div.dataset.unit = key;
-                div.innerHTML = `
-                    <span class="icon">${unit.icon}</span>
-                    <span class="name">${unit.name}</span>
-                    <span class="stats">❤️${unit.health} ⚔️${unit.damage}</span>
-                `;
-                div.onclick = () => selectUnitType(key);
-                elements.unitGrid.appendChild(div);
-            });
-        }
-
-        function selectUnitType(key) {
-            document.querySelectorAll('.unit-item').forEach(el => el.classList.remove('selected'));
-            if (gameState.selectedUnit === key) {
-                gameState.selectedUnit = null;
-            } else {
-                document.querySelector(`.unit-item[data-unit="${key}"]`).classList.add('selected');
-                gameState.selectedUnit = key;
-                gameState.selectedBuilding = null;
-                document.querySelectorAll('.build-item').forEach(el => el.classList.remove('selected'));
-            }
-        }
-
-        // Generate Room Code
-        function generateRoomCode() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let code = '';
-            for (let i = 0; i < 6; i++) {
-                code += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return code;
-        }
-
-        // Generate Player ID
-        function generatePlayerId() {
-            return 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        // Generate Map
-        function generateMap() {
-            const tiles = [];
-            const resourceNodes = [];
-
-            // Generate terrain
-            for (let y = 0; y < GRID_SIZE; y++) {
-                tiles[y] = [];
-                for (let x = 0; x < GRID_SIZE; x++) {
-                    // Random terrain types
-                    const rand = Math.random();
-                    let type = 'grass';
-                    if (rand < 0.1) type = 'water';
-                    else if (rand < 0.15) type = 'mountain';
-                    else if (rand < 0.25) type = 'forest';
-                    tiles[y][x] = { type, x, y };
-                }
-            }
-
-            // Generate resource nodes
-            const nodeCount = 20 + Math.floor(Math.random() * 10);
-            for (let i = 0; i < nodeCount; i++) {
-                let x, y, attempts = 0;
-                do {
-                    x = Math.floor(Math.random() * GRID_SIZE);
-                    y = Math.floor(Math.random() * GRID_SIZE);
-                    attempts++;
-                } while (tiles[y][x].type !== 'grass' && attempts < 50);
-
-                if (attempts < 50) {
-                    const types = ['oil', 'wheat', 'dollar'];
-                    const resourceType = types[Math.floor(Math.random() * types.length)];
-                    const capacity = 500 + Math.floor(Math.random() * 1500);
-                    resourceNodes.push({
-                        id: 'node_' + i,
-                        x: x * TILE_SIZE + TILE_SIZE / 2,
-                        y: y * TILE_SIZE + TILE_SIZE / 2,
-                        gridX: x,
-                        gridY: y,
-                        type: resourceType,
-                        capacity: capacity,
-                        remaining: capacity,
-                        level: 1,
-                        owner: null
-                    });
-                    tiles[y][x].hasResource = true;
-                }
-            }
-
-            return { tiles, resourceNodes };
-        }
-
-        // Create Room
-        async function createRoom() {
-            const playerName = elements.playerNameInput.value.trim();
-            if (!playerName) {
-                showNotification('Hata', 'Lütfen bir oyuncu adı girin', 'danger');
+            if (Object.keys(data.players).length >= 10) {
+                showNotification("Oda dolu.");
+                setLoading(false);
                 return;
             }
 
-            showLoading(true);
+            // Check if already joined
+            if (!data.players[user.uid]) {
+                await updateDoc(gameRef, {
+                    [`players.${user.uid}`]: {
+                        id: user.uid,
+                        name: `Komutan ${user.uid.slice(0,4)}`,
+                        country: selectedCountry,
+                        ready: false,
+                        resources: { oil: 500, wheat: 500, dollar: 500, ammo: 50, move: 50 },
+                        diplomacy: {}
+                    }
+                });
+            }
+            setGameCode(codeInput);
+            setGameState('lobby');
+        } else {
+            showNotification("Oyun kodu geçersiz.");
+        }
+    } catch (e) {
+        console.error(e);
+        showNotification("Hata oluştu.");
+    }
+    setLoading(false);
+  };
 
-            const roomCode = generateRoomCode();
-            const playerId = generatePlayerId();
-            const map = generateMap();
+  const startGame = async () => {
+    if (!gameData || gameData.host !== user.uid) return;
+    
+    // Assign HQs randomly
+    const updatedMap = [...gameData.map];
+    const playerIds = Object.keys(gameData.players);
+    const positions = [];
+    
+    playerIds.forEach(pid => {
+        let placed = false;
+        let attempts = 0;
+        while (!placed && attempts < 100) {
+            attempts++;
+            const rx = getRandomInt(2, MAP_SIZE - 3);
+            const ry = getRandomInt(2, MAP_SIZE - 3);
+            const tooClose = positions.some(p => Math.abs(p.x - rx) < 5 && Math.abs(p.y - ry) < 5);
+            if (!tooClose && !updatedMap[ry][rx].resourceType) {
+                updatedMap[ry][rx].structureType = 'HQ';
+                updatedMap[ry][rx].owner = pid;
+                updatedMap[ry][rx].hp = 1000;
+                positions.push({x: rx, y: ry});
+                placed = true;
+            }
+        }
+    });
 
-            gameState.roomCode = roomCode;
-            gameState.playerId = playerId;
-            gameState.playerName = playerName;
-            gameState.isHost = true;
-            gameState.map = map;
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
+        status: 'game',
+        map: updatedMap
+    });
+  };
 
-            try {
-                await database.ref(`rooms/${roomCode}`).set({
-                    host: playerId,
-                    status: 'lobby',
-                    createdAt: Date.now(),
-                    map: map,
-                    players: {
-                        [playerId]: {
-                            id: playerId,
-                            name: playerName,
-                            country: gameState.country,
-                            ready: false,
-                            resources: gameState.resources,
-                            color: getPlayerColor(0)
+  // --- GAMEPLAY ACTIONS ---
+
+  const buyResource = async (type) => {
+    if (!myPlayer) return;
+
+    const currentOil = myPlayer.resources.oil;
+    const currentWheat = myPlayer.resources.wheat;
+    const currentDollar = myPlayer.resources.dollar;
+
+    let updates = {};
+
+    if (type === 'AMMO') {
+        // Cost: 50 Wheat + 50 Oil
+        if (currentWheat >= 50 && currentOil >= 50) {
+            updates = {
+                [`players.${user.uid}.resources.wheat`]: increment(-50),
+                [`players.${user.uid}.resources.oil`]: increment(-50),
+                [`players.${user.uid}.resources.ammo`]: increment(50)
+            };
+        } else { showNotification("Yetersiz Petrol veya Buğday!"); return; }
+    } else if (type === 'MOVE') {
+        // Cost: 50 Oil + 50 Dollar
+        if (currentOil >= 50 && currentDollar >= 50) {
+             updates = {
+                [`players.${user.uid}.resources.oil`]: increment(-50),
+                [`players.${user.uid}.resources.dollar`]: increment(-50),
+                [`players.${user.uid}.resources.move`]: increment(50)
+            };
+        } else { showNotification("Yetersiz Petrol veya Dolar!"); return; }
+    }
+
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), updates);
+  };
+
+  const handleTileClick = async (x, y) => {
+    if (!gameData || gameState !== 'game') return;
+    const clickedTile = gameData.map[y][x];
+
+    // MOVEMENT & ATTACK LOGIC
+    if (selectedTile && selectedTile.unit && selectedTile.owner === user.uid) {
+        // If clicking same tile, deselect
+        if (selectedTile.x === x && selectedTile.y === y) {
+            setSelectedTile(null);
+            return;
+        }
+
+        const dx = Math.abs(selectedTile.x - x);
+        const dy = Math.abs(selectedTile.y - y);
+        const dist = Math.max(dx, dy); // Chebyshev distance
+        
+        // --- MOVE ---
+        // Can move if empty OR if it's a wild mine (to capture it)
+        const isStructureBlocking = clickedTile.structureType && clickedTile.structureType !== 'MINE_WILD' && clickedTile.structureType !== 'MINE';
+        const isUnitBlocking = clickedTile.unit;
+        
+        // Simplified: Can only move to empty ground or own structures/mines or wild mines
+        const canEnter = !clickedTile.unit && (!clickedTile.structureType || clickedTile.structureType === 'MINE_WILD' || (clickedTile.structureType === 'MINE' && clickedTile.owner === user.uid));
+
+        if (canEnter && dist <= 1) { 
+             const unitType = UNITS[selectedTile.unit.type];
+             if (myPlayer.resources.move >= unitType.moveCost) {
+                 const updatedMap = JSON.parse(JSON.stringify(gameData.map)); // Deep copy
+                 
+                 // Move unit data
+                 updatedMap[y][x].unit = { ...selectedTile.unit };
+                 updatedMap[y][x].owner = user.uid; // Unit presence claims land
+                 
+                 // Clear old
+                 updatedMap[selectedTile.y][selectedTile.x].unit = null;
+
+                 // Mine Capture Logic
+                 if (updatedMap[y][x].structureType === 'MINE_WILD') {
+                     updatedMap[y][x].structureType = 'MINE';
+                     updatedMap[y][x].owner = user.uid;
+                     showNotification("Maden ele geçirildi!");
+                 }
+
+                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
+                     map: updatedMap,
+                     [`players.${user.uid}.resources.move`]: increment(-unitType.moveCost)
+                 });
+                 setSelectedTile(null);
+                 return;
+             } else {
+                 showNotification("Yetersiz Hareket Puanı!");
+             }
+        }
+
+        // --- ATTACK ---
+        if ((clickedTile.unit || (clickedTile.structureType && clickedTile.owner)) && clickedTile.owner !== user.uid) {
+             const pact = myPlayer.diplomacy?.[clickedTile.owner];
+             if (pact && pact > Date.now()) {
+                 showNotification("Saldırmazlık paktı var!");
+                 return;
+             }
+
+             const unitType = UNITS[selectedTile.unit.type];
+             if (dist <= unitType.range) {
+                 if (myPlayer.resources.ammo >= unitType.ammoCost) {
+                    const updatedMap = JSON.parse(JSON.stringify(gameData.map));
+                    const target = updatedMap[y][x];
+                    
+                    const damage = unitType.damage;
+                    
+                    // Attack Unit
+                    if (target.unit) {
+                        target.unit.hp -= damage;
+                        if (target.unit.hp <= 0) {
+                            target.unit = null;
+                            showNotification("Düşman birimi yok edildi!");
                         }
-                    },
-                    chat: [],
-                    market: [],
-                    pacts: {}
-                });
-
-                // Listen for room changes
-                setupRoomListeners(roomCode);
-
-                showLobby();
-            } catch (error) {
-                console.error('Error creating room:', error);
-                showNotification('Hata', 'Oda oluşturulamadı', 'danger');
-            }
-
-            showLoading(false);
-        }
-
-        // Join Room
-        async function joinRoom() {
-            const playerName = elements.playerNameInput.value.trim();
-            const roomCode = elements.roomCodeInput.value.trim().toUpperCase();
-
-            if (!playerName) {
-                showNotification('Hata', 'Lütfen bir oyuncu adı girin', 'danger');
-                return;
-            }
-            if (roomCode.length !== 6) {
-                showNotification('Hata', 'Geçerli bir oda kodu girin', 'danger');
-                return;
-            }
-
-            showLoading(true);
-
-            try {
-                const roomSnapshot = await database.ref(`rooms/${roomCode}`).once('value');
-                const roomData = roomSnapshot.val();
-
-                if (!roomData) {
-                    showNotification('Hata', 'Oda bulunamadı', 'danger');
-                    showLoading(false);
-                    return;
-                }
-
-                if (roomData.status !== 'lobby') {
-                    showNotification('Hata', 'Oyun zaten başlamış', 'danger');
-                    showLoading(false);
-                    return;
-                }
-
-                const playerCount = Object.keys(roomData.players || {}).length;
-                if (playerCount >= 10) {
-                    showNotification('Hata', 'Oda dolu', 'danger');
-                    showLoading(false);
-                    return;
-                }
-
-                const playerId = generatePlayerId();
-                gameState.roomCode = roomCode;
-                gameState.playerId = playerId;
-                gameState.playerName = playerName;
-                gameState.isHost = false;
-                gameState.map = roomData.map;
-
-                await database.ref(`rooms/${roomCode}/players/${playerId}`).set({
-                    id: playerId,
-                    name: playerName,
-                    country: gameState.country,
-                    ready: false,
-                    resources: gameState.resources,
-                    color: getPlayerColor(playerCount)
-                });
-
-                setupRoomListeners(roomCode);
-                showLobby();
-            } catch (error) {
-                console.error('Error joining room:', error);
-                showNotification('Hata', 'Odaya katılınamadı', 'danger');
-            }
-
-            showLoading(false);
-        }
-
-        // Get Player Color
-        function getPlayerColor(index) {
-            const colors = [
-                '#00ff88', '#ff6b35', '#00bfff', '#ff3366',
-                '#ffcc00', '#9933ff', '#00ffcc', '#ff9900',
-                '#66ff66', '#ff66b2'
-            ];
-            return colors[index % colors.length];
-        }
-
-        // Setup Room Listeners
-        function setupRoomListeners(roomCode) {
-            // Players listener
-            database.ref(`rooms/${roomCode}/players`).on('value', (snapshot) => {
-                const players = snapshot.val() || {};
-                gameState.players = players;
-                updateLobbyPlayers(players);
-                updateGamePlayers(players);
-            });
-
-            // Chat listener
-            database.ref(`rooms/${roomCode}/chat`).on('value', (snapshot) => {
-                const messages = snapshot.val() || [];
-                updateChat(messages);
-            });
-
-            // Status listener
-            database.ref(`rooms/${roomCode}/status`).on('value', (snapshot) => {
-                const status = snapshot.val();
-                if (status === 'playing' && !gameState.inGame) {
-                    startGame();
-                }
-            });
-
-            // Game state listener
-            database.ref(`rooms/${roomCode}/gameState`).on('value', (snapshot) => {
-                if (gameState.inGame) {
-                    const data = snapshot.val();
-                    if (data) {
-                        syncGameState(data);
-                    }
-                }
-            });
-
-            // Market listener
-            database.ref(`rooms/${roomCode}/market`).on('value', (snapshot) => {
-                gameState.marketListings = snapshot.val() || [];
-                updateMarketListings();
-            });
-
-            // Pacts listener
-            database.ref(`rooms/${roomCode}/pacts`).on('value', (snapshot) => {
-                gameState.pacts = snapshot.val() || {};
-                updatePacts();
-            });
-        }
-
-        // Update Lobby Players
-        function updateLobbyPlayers(players) {
-            const playerList = Object.values(players);
-            elements.lobbyPlayers.innerHTML = '';
-            document.querySelector('.players-list h3').textContent = `👥 Oyuncular (${playerList.length}/10)`;
-
-            playerList.forEach(player => {
-                const div = document.createElement('div');
-                div.className = 'player-card' + (player.ready ? ' ready' : '');
-                div.innerHTML = `
-                    <span class="player-flag">${player.country?.flag || '🏳️'}</span>
-                    <div class="player-info">
-                        <div class="player-name">${player.name}${player.id === gameState.playerId ? ' (Sen)' : ''}</div>
-                        <div class="player-country">${player.country?.name || 'Seçilmedi'}</div>
-                    </div>
-                    <span class="player-status ${player.ready ? 'ready' : ''}">${player.ready ? 'Hazır' : 'Bekliyor'}</span>
-                `;
-                elements.lobbyPlayers.appendChild(div);
-            });
-
-            // Show start button for host
-            if (gameState.isHost) {
-                const allReady = playerList.length >= 2 && playerList.every(p => p.ready);
-                elements.startGameBtn.style.display = allReady ? 'block' : 'none';
-            }
-        }
-
-        // Update Game Players
-        function updateGamePlayers(players) {
-            if (!gameState.inGame) return;
-
-            const playersList = document.getElementById('players-list');
-            playersList.innerHTML = '';
-
-            Object.values(players).forEach(player => {
-                const isAlly = gameState.pacts[`${gameState.playerId}_${player.id}`]?.active ||
-                               gameState.pacts[`${player.id}_${gameState.playerId}`]?.active;
-                const isSelf = player.id === gameState.playerId;
-
-                const div = document.createElement('div');
-                div.className = 'player-row';
-                div.innerHTML = `
-                    <span class="flag">${player.country?.flag || '🏳️'}</span>
-                    <span class="name">${player.name}</span>
-                    <span class="status-dot ${isSelf ? '' : (isAlly ? 'ally' : 'enemy')}"></span>
-                `;
-                playersList.appendChild(div);
-            });
-        }
-
-        // Update Chat
-        function updateChat(messages) {
-            elements.lobbyChatMessages.innerHTML = '';
-            (Array.isArray(messages) ? messages : []).slice(-50).forEach(msg => {
-                const div = document.createElement('div');
-                div.className = 'chat-message';
-                div.innerHTML = `<span class="sender">${msg.sender}:</span> ${msg.text}`;
-                elements.lobbyChatMessages.appendChild(div);
-            });
-            elements.lobbyChatMessages.scrollTop = elements.lobbyChatMessages.scrollHeight;
-        }
-
-        // Send Chat Message
-        async function sendChatMessage() {
-            const text = elements.lobbyChatInput.value.trim();
-            if (!text) return;
-
-            try {
-                const chatRef = database.ref(`rooms/${gameState.roomCode}/chat`);
-                const snapshot = await chatRef.once('value');
-                const messages = snapshot.val() || [];
-                messages.push({
-                    sender: gameState.playerName,
-                    text: text,
-                    timestamp: Date.now()
-                });
-                await chatRef.set(messages.slice(-100));
-                elements.lobbyChatInput.value = '';
-            } catch (error) {
-                console.error('Error sending message:', error);
-            }
-        }
-
-        // Toggle Ready
-        async function toggleReady() {
-            try {
-                const playerRef = database.ref(`rooms/${gameState.roomCode}/players/${gameState.playerId}`);
-                const snapshot = await playerRef.once('value');
-                const player = snapshot.val();
-                await playerRef.update({ ready: !player.ready });
-                elements.readyBtn.textContent = player.ready ? '✓ Hazırım' : '✗ Hazır Değilim';
-            } catch (error) {
-                console.error('Error toggling ready:', error);
-            }
-        }
-
-        // Start Game (Host only)
-        async function initiateGameStart() {
-            if (!gameState.isHost) return;
-
-            try {
-                // Set initial positions for players
-                const players = Object.values(gameState.players);
-                const spawnPositions = getSpawnPositions(players.length);
-
-                const initialState = {
-                    buildings: {},
-                    units: {},
-                    resourceNodes: gameState.map.resourceNodes.reduce((acc, node) => {
-                        acc[node.id] = node;
-                        return acc;
-                    }, {})
-                };
-
-                // Create headquarters for each player
-                players.forEach((player, index) => {
-                    const pos = spawnPositions[index];
-                    const hqId = `building_${player.id}_hq`;
-                    initialState.buildings[hqId] = {
-                        id: hqId,
-                        type: 'headquarters',
-                        owner: player.id,
-                        x: pos.x,
-                        y: pos.y,
-                        health: BUILDINGS.headquarters.health,
-                        maxHealth: BUILDINGS.headquarters.health,
-                        level: 1
-                    };
-                });
-
-                await database.ref(`rooms/${gameState.roomCode}`).update({
-                    status: 'playing',
-                    startTime: Date.now(),
-                    gameState: initialState
-                });
-            } catch (error) {
-                console.error('Error starting game:', error);
-            }
-        }
-
-        // Get Spawn Positions
-        function getSpawnPositions(count) {
-            const positions = [];
-            const margin = TILE_SIZE * 4;
-            const mapSize = GRID_SIZE * TILE_SIZE;
-
-            const corners = [
-                { x: margin, y: margin },
-                { x: mapSize - margin, y: margin },
-                { x: margin, y: mapSize - margin },
-                { x: mapSize - margin, y: mapSize - margin },
-                { x: mapSize / 2, y: margin },
-                { x: mapSize / 2, y: mapSize - margin },
-                { x: margin, y: mapSize / 2 },
-                { x: mapSize - margin, y: mapSize / 2 },
-                { x: mapSize / 4, y: mapSize / 4 },
-                { x: mapSize * 3 / 4, y: mapSize * 3 / 4 }
-            ];
-
-            for (let i = 0; i < count && i < corners.length; i++) {
-                positions.push(corners[i]);
-            }
-
-            return positions;
-        }
-
-        // Start Game
-        function startGame() {
-            gameState.inGame = true;
-            elements.lobby.classList.remove('active');
-            elements.gameContainer.classList.add('active');
-
-            // Initialize canvas
-            initCanvas();
-            initMinimap();
-
-            // Update UI
-            document.getElementById('my-flag').textContent = gameState.country?.flag || '🏳️';
-            document.getElementById('my-name').textContent = gameState.playerName;
-
-            // Start game loop
-            requestAnimationFrame(gameLoop);
-
-            // Start resource production
-            setInterval(produceResources, 1000);
-
-            // Start game timer
-            setInterval(() => {
-                gameState.gameTime++;
-                const minutes = Math.floor(gameState.gameTime / 60);
-                const seconds = gameState.gameTime % 60;
-                elements.gameTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }, 1000);
-
-            showNotification('Oyun Başladı!', 'İyi şanslar, komutan!', 'success');
-        }
-
-        // Initialize Canvas
-        function initCanvas() {
-            const container = elements.mapContainer;
-            elements.canvas.width = container.clientWidth;
-            elements.canvas.height = container.clientHeight;
-            ctx = elements.canvas.getContext('2d');
-
-            // Center camera on player's HQ
-            const myBuildings = Object.values(getGameBuildings()).filter(b => b.owner === gameState.playerId);
-            if (myBuildings.length > 0) {
-                gameState.camera.x = myBuildings[0].x - elements.canvas.width / 2;
-                gameState.camera.y = myBuildings[0].y - elements.canvas.height / 2;
-            }
-
-            // Mouse events
-            elements.canvas.addEventListener('mousedown', handleMouseDown);
-            elements.canvas.addEventListener('mousemove', handleMouseMove);
-            elements.canvas.addEventListener('mouseup', handleMouseUp);
-            elements.canvas.addEventListener('wheel', handleWheel);
-            elements.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
-            // Resize handler
-            window.addEventListener('resize', () => {
-                elements.canvas.width = container.clientWidth;
-                elements.canvas.height = container.clientHeight;
-            });
-        }
-
-        // Initialize Minimap
-        function initMinimap() {
-            elements.minimap.width = 248;
-            elements.minimap.height = 200;
-            minimapCtx = elements.minimap.getContext('2d');
-
-            elements.minimap.addEventListener('click', (e) => {
-                const rect = elements.minimap.getBoundingClientRect();
-                const x = (e.clientX - rect.left) / rect.width * MAP_WIDTH;
-                const y = (e.clientY - rect.top) / rect.height * MAP_HEIGHT;
-                gameState.camera.x = x - elements.canvas.width / 2;
-                gameState.camera.y = y - elements.canvas.height / 2;
-            });
-        }
-
-        // Get game buildings from Firebase state
-        function getGameBuildings() {
-            return gameState.syncedState?.buildings || {};
-        }
-
-        // Get game units from Firebase state
-        function getGameUnits() {
-            return gameState.syncedState?.units || {};
-        }
-
-        // Get resource nodes from Firebase state
-        function getResourceNodes() {
-            return gameState.syncedState?.resourceNodes || {};
-        }
-
-        // Sync Game State
-        function syncGameState(data) {
-            gameState.syncedState = data;
-        }
-
-        // Game Loop
-        function gameLoop() {
-            if (!gameState.inGame) return;
-
-            update();
-            render();
-            renderMinimap();
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Update
-        function update() {
-            // Update units movement and combat
-            const units = getGameUnits();
-            Object.values(units).forEach(unit => {
-                if (unit.owner === gameState.playerId && unit.targetX !== undefined) {
-                    // Move towards target
-                    const dx = unit.targetX - unit.x;
-                    const dy = unit.targetY - unit.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist > 5) {
-                        const speed = UNITS[unit.type].speed;
-                        const moveX = (dx / dist) * speed;
-                        const moveY = (dy / dist) * speed;
-
-                        updateUnitPosition(unit.id, unit.x + moveX, unit.y + moveY);
-                    }
-                }
-            });
-        }
-
-        // Render
-        function render() {
-            ctx.clearRect(0, 0, elements.canvas.width, elements.canvas.height);
-
-            // Draw map
-            drawMap();
-
-            // Draw resource nodes
-            drawResourceNodes();
-
-            // Draw buildings
-            drawBuildings();
-
-            // Draw units
-            drawUnits();
-
-            // Draw selection
-            if (gameState.selectedEntity) {
-                drawSelection();
-            }
-
-            // Draw placement preview
-            if (gameState.selectedBuilding || gameState.selectedUnit) {
-                drawPlacementPreview();
-            }
-        }
-
-        // Draw Map
-        function drawMap() {
-            const { tiles } = gameState.map;
-            const startX = Math.max(0, Math.floor(gameState.camera.x / TILE_SIZE));
-            const startY = Math.max(0, Math.floor(gameState.camera.y / TILE_SIZE));
-            const endX = Math.min(GRID_SIZE, Math.ceil((gameState.camera.x + elements.canvas.width) / TILE_SIZE) + 1);
-            const endY = Math.min(GRID_SIZE, Math.ceil((gameState.camera.y + elements.canvas.height) / TILE_SIZE) + 1);
-
-            for (let y = startY; y < endY; y++) {
-                for (let x = startX; x < endX; x++) {
-                    const tile = tiles[y]?.[x];
-                    if (!tile) continue;
-
-                    const screenX = x * TILE_SIZE - gameState.camera.x;
-                    const screenY = y * TILE_SIZE - gameState.camera.y;
-
-                    // Tile colors
-                    let color;
-                    switch (tile.type) {
-                        case 'grass': color = '#2d5a27'; break;
-                        case 'water': color = '#1e4d6b'; break;
-                        case 'mountain': color = '#5a4a3a'; break;
-                        case 'forest': color = '#1a4a1a'; break;
-                        default: color = '#2d5a27';
+                    } 
+                    // Attack Building
+                    else if (target.structureType) {
+                        target.hp = (target.hp || 500) - damage;
+                        if (target.hp <= 0) {
+                            target.structureType = null;
+                            target.owner = null;
+                            showNotification("Bina yıkıldı!");
+                        }
                     }
 
-                    ctx.fillStyle = color;
-                    ctx.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
-
-                    // Grid lines
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-                    ctx.strokeRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
-
-                    // Decorations
-                    if (tile.type === 'forest') {
-                        ctx.font = '24px serif';
-                        ctx.fillText('🌲', screenX + 20, screenY + 40);
-                    } else if (tile.type === 'mountain') {
-                        ctx.font = '24px serif';
-                        ctx.fillText('⛰️', screenX + 20, screenY + 40);
-                    } else if (tile.type === 'water') {
-                        ctx.font = '20px serif';
-                        ctx.fillText('🌊', screenX + 20, screenY + 40);
-                    }
-                }
-            }
-        }
-
-        // Draw Resource Nodes
-        function drawResourceNodes() {
-            const nodes = getResourceNodes();
-            Object.values(nodes).forEach(node => {
-                const screenX = node.x - gameState.camera.x;
-                const screenY = node.y - gameState.camera.y;
-
-                if (screenX < -50 || screenX > elements.canvas.width + 50 ||
-                    screenY < -50 || screenY > elements.canvas.height + 50) return;
-
-                // Background
-                ctx.fillStyle = node.owner ? (gameState.players[node.owner]?.color || '#666') : '#333';
-                ctx.beginPath();
-                ctx.arc(screenX, screenY, 25, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Border
-                ctx.strokeStyle = node.owner === gameState.playerId ? '#00ff88' : '#555';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                // Icon
-                ctx.font = '28px serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(RESOURCE_TYPES[node.type].icon, screenX, screenY);
-
-                // Level indicator
-                if (node.level > 1) {
-                    ctx.font = '12px Orbitron';
-                    ctx.fillStyle = '#ffcc00';
-                    ctx.fillText(`Lv${node.level}`, screenX, screenY + 35);
-                }
-            });
-        }
-
-        // Draw Buildings
-        function drawBuildings() {
-            const buildings = getGameBuildings();
-            Object.values(buildings).forEach(building => {
-                const screenX = building.x - gameState.camera.x;
-                const screenY = building.y - gameState.camera.y;
-
-                if (screenX < -80 || screenX > elements.canvas.width + 80 ||
-                    screenY < -80 || screenY > elements.canvas.height + 80) return;
-
-                const def = BUILDINGS[building.type];
-                const player = gameState.players[building.owner];
-                const color = player?.color || '#666';
-
-                // Building base
-                ctx.fillStyle = color + '40';
-                ctx.beginPath();
-                ctx.arc(screenX, screenY, 35, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.strokeStyle = building.owner === gameState.playerId ? '#00ff88' : color;
-                ctx.lineWidth = 3;
-                ctx.stroke();
-
-                // Icon
-                ctx.font = '36px serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(def.icon, screenX, screenY);
-
-                // Health bar
-                const healthPercent = building.health / building.maxHealth;
-                const barWidth = 50;
-                const barHeight = 6;
-                ctx.fillStyle = '#333';
-                ctx.fillRect(screenX - barWidth / 2, screenY + 40, barWidth, barHeight);
-                ctx.fillStyle = healthPercent > 0.5 ? '#00ff88' : (healthPercent > 0.25 ? '#ffcc00' : '#ff3366');
-                ctx.fillRect(screenX - barWidth / 2, screenY + 40, barWidth * healthPercent, barHeight);
-
-                // Range indicator for selected towers
-                if (gameState.selectedEntity?.id === building.id && def.range) {
-                    ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([5, 5]);
-                    ctx.beginPath();
-                    ctx.arc(screenX, screenY, def.range, 0, Math.PI * 2);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                }
-            });
-        }
-
-        // Draw Units
-        function drawUnits() {
-            const units = getGameUnits();
-            Object.values(units).forEach(unit => {
-                const screenX = unit.x - gameState.camera.x;
-                const screenY = unit.y - gameState.camera.y;
-
-                if (screenX < -40 || screenX > elements.canvas.width + 40 ||
-                    screenY < -40 || screenY > elements.canvas.height + 40) return;
-
-                const def = UNITS[unit.type];
-                const player = gameState.players[unit.owner];
-                const color = player?.color || '#666';
-
-                // Unit base
-                ctx.fillStyle = color + '60';
-                ctx.beginPath();
-                ctx.arc(screenX, screenY, 18, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.strokeStyle = unit.owner === gameState.playerId ? '#00ff88' : color;
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                // Icon
-                ctx.font = '20px serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(def.icon, screenX, screenY);
-
-                // Health bar
-                const healthPercent = unit.health / def.health;
-                const barWidth = 30;
-                const barHeight = 4;
-                ctx.fillStyle = '#333';
-                ctx.fillRect(screenX - barWidth / 2, screenY + 22, barWidth, barHeight);
-                ctx.fillStyle = healthPercent > 0.5 ? '#00ff88' : (healthPercent > 0.25 ? '#ffcc00' : '#ff3366');
-                ctx.fillRect(screenX - barWidth / 2, screenY + 22, barWidth * healthPercent, barHeight);
-
-                // Selection indicator
-                if (gameState.selectedEntity?.id === unit.id) {
-                    ctx.strokeStyle = '#00ff88';
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([3, 3]);
-                    ctx.beginPath();
-                    ctx.arc(screenX, screenY, 22, 0, Math.PI * 2);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-
-                    // Range indicator
-                    ctx.strokeStyle = 'rgba(255, 107, 53, 0.3)';
-                    ctx.beginPath();
-                    ctx.arc(screenX, screenY, def.range, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-            });
-        }
-
-        // Draw Selection
-        function drawSelection() {
-            // Selection info is handled by HTML overlay
-        }
-
-        // Draw Placement Preview
-        function drawPlacementPreview() {
-            const mousePos = gameState.mouseWorldPos;
-            if (!mousePos) return;
-
-            ctx.globalAlpha = 0.5;
-
-            if (gameState.selectedBuilding) {
-                const def = BUILDINGS[gameState.selectedBuilding];
-                const screenX = mousePos.x - gameState.camera.x;
-                const screenY = mousePos.y - gameState.camera.y;
-
-                ctx.fillStyle = '#00ff8840';
-                ctx.beginPath();
-                ctx.arc(screenX, screenY, 35, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.font = '36px serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(def.icon, screenX, screenY);
-
-                if (def.range) {
-                    ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.arc(screenX, screenY, def.range, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-            }
-
-            ctx.globalAlpha = 1;
-        }
-
-        // Render Minimap
-        function renderMinimap() {
-            const scaleX = elements.minimap.width / MAP_WIDTH;
-            const scaleY = elements.minimap.height / MAP_HEIGHT;
-
-            minimapCtx.fillStyle = '#0d1520';
-            minimapCtx.fillRect(0, 0, elements.minimap.width, elements.minimap.height);
-
-            // Draw terrain
-            gameState.map.tiles.forEach((row, y) => {
-                row.forEach((tile, x) => {
-                    let color;
-                    switch (tile.type) {
-                        case 'grass': color = '#1a3a17'; break;
-                        case 'water': color = '#0d2a3a'; break;
-                        case 'mountain': color = '#3a2a1a'; break;
-                        case 'forest': color = '#0a2a0a'; break;
-                        default: color = '#1a3a17';
-                    }
-                    minimapCtx.fillStyle = color;
-                    minimapCtx.fillRect(
-                        x * TILE_SIZE * scaleX,
-                        y * TILE_SIZE * scaleY,
-                        TILE_SIZE * scaleX + 1,
-                        TILE_SIZE * scaleY + 1
-                    );
-                });
-            });
-
-            // Draw resource nodes
-            Object.values(getResourceNodes()).forEach(node => {
-                minimapCtx.fillStyle = node.owner ? (gameState.players[node.owner]?.color || '#666') : '#444';
-                minimapCtx.beginPath();
-                minimapCtx.arc(node.x * scaleX, node.y * scaleY, 3, 0, Math.PI * 2);
-                minimapCtx.fill();
-            });
-
-            // Draw buildings
-            Object.values(getGameBuildings()).forEach(building => {
-                const player = gameState.players[building.owner];
-                minimapCtx.fillStyle = player?.color || '#666';
-                minimapCtx.fillRect(
-                    building.x * scaleX - 3,
-                    building.y * scaleY - 3,
-                    6, 6
-                );
-            });
-
-            // Draw units
-            Object.values(getGameUnits()).forEach(unit => {
-                const player = gameState.players[unit.owner];
-                minimapCtx.fillStyle = player?.color || '#666';
-                minimapCtx.beginPath();
-                minimapCtx.arc(unit.x * scaleX, unit.y * scaleY, 2, 0, Math.PI * 2);
-                minimapCtx.fill();
-            });
-
-            // Draw camera viewport
-            minimapCtx.strokeStyle = '#00ff88';
-            minimapCtx.lineWidth = 1;
-            minimapCtx.strokeRect(
-                gameState.camera.x * scaleX,
-                gameState.camera.y * scaleY,
-                elements.canvas.width * scaleX,
-                elements.canvas.height * scaleY
-            );
-        }
-
-        // Mouse Handlers
-        function handleMouseDown(e) {
-            if (e.button === 2) {
-                // Right click - start drag
-                gameState.isDragging = true;
-                gameState.lastMousePos = { x: e.clientX, y: e.clientY };
-            } else if (e.button === 0) {
-                // Left click
-                const rect = elements.canvas.getBoundingClientRect();
-                const worldX = e.clientX - rect.left + gameState.camera.x;
-                const worldY = e.clientY - rect.top + gameState.camera.y;
-
-                if (gameState.selectedBuilding) {
-                    // Place building
-                    placeBuilding(worldX, worldY);
-                } else if (gameState.selectedUnit && gameState.selectedEntity?.type === 'barracks') {
-                    // Train unit at barracks
-                    trainUnit();
-                } else if (gameState.selectedEntity && gameState.selectedEntity.entityType === 'unit') {
-                    // Move selected unit
-                    moveUnit(gameState.selectedEntity.id, worldX, worldY);
-                } else {
-                    // Select entity
-                    selectEntityAt(worldX, worldY);
-                }
-            }
-        }
-
-        function handleMouseMove(e) {
-            const rect = elements.canvas.getBoundingClientRect();
-            const worldX = e.clientX - rect.left + gameState.camera.x;
-            const worldY = e.clientY - rect.top + gameState.camera.y;
-            gameState.mouseWorldPos = { x: worldX, y: worldY };
-
-            if (gameState.isDragging) {
-                const dx = e.clientX - gameState.lastMousePos.x;
-                const dy = e.clientY - gameState.lastMousePos.y;
-                gameState.camera.x -= dx;
-                gameState.camera.y -= dy;
-
-                // Clamp camera
-                gameState.camera.x = Math.max(0, Math.min(MAP_WIDTH - elements.canvas.width, gameState.camera.x));
-                gameState.camera.y = Math.max(0, Math.min(MAP_HEIGHT - elements.canvas.height, gameState.camera.y));
-
-                gameState.lastMousePos = { x: e.clientX, y: e.clientY };
-            }
-        }
-
-        function handleMouseUp(e) {
-            if (e.button === 2) {
-                gameState.isDragging = false;
-            }
-        }
-
-        function handleWheel(e) {
-            // Could implement zoom here
-            e.preventDefault();
-        }
-
-        // Select Entity At Position
-        function selectEntityAt(x, y) {
-            // Check units first
-            const units = getGameUnits();
-            for (const unit of Object.values(units)) {
-                const dx = unit.x - x;
-                const dy = unit.y - y;
-                if (Math.sqrt(dx * dx + dy * dy) < 25) {
-                    selectEntity({ ...unit, entityType: 'unit' });
-                    return;
-                }
-            }
-
-            // Check buildings
-            const buildings = getGameBuildings();
-            for (const building of Object.values(buildings)) {
-                const dx = building.x - x;
-                const dy = building.y - y;
-                if (Math.sqrt(dx * dx + dy * dy) < 40) {
-                    selectEntity({ ...building, entityType: 'building' });
-                    return;
-                }
-            }
-
-            // Check resource nodes
-            const nodes = getResourceNodes();
-            for (const node of Object.values(nodes)) {
-                const dx = node.x - x;
-                const dy = node.y - y;
-                if (Math.sqrt(dx * dx + dy * dy) < 30) {
-                    selectEntity({ ...node, entityType: 'resource' });
-                    return;
-                }
-            }
-
-            // Deselect
-            gameState.selectedEntity = null;
-            elements.selectionInfo.classList.remove('active');
-        }
-
-        // Select Entity
-        function selectEntity(entity) {
-            gameState.selectedEntity = entity;
-            updateSelectionInfo(entity);
-        }
-
-        // Update Selection Info
-        function updateSelectionInfo(entity) {
-            elements.selectionInfo.classList.add('active');
-
-            const iconEl = document.getElementById('selection-icon');
-            const nameEl = document.getElementById('selection-name');
-            const ownerEl = document.getElementById('selection-owner');
-            const statsEl = document.getElementById('selection-stats');
-            const healthEl = document.getElementById('selection-health');
-            const actionsEl = document.getElementById('selection-actions');
-
-            actionsEl.innerHTML = '';
-
-            if (entity.entityType === 'building') {
-                const def = BUILDINGS[entity.type];
-                iconEl.textContent = def.icon;
-                nameEl.textContent = def.name;
-                ownerEl.textContent = entity.owner === gameState.playerId ? 'Senin' : (gameState.players[entity.owner]?.name || 'Düşman');
-                healthEl.style.width = `${(entity.health / entity.maxHealth) * 100}%`;
-
-                statsEl.innerHTML = `
-                    <div class="stat-item">❤️ ${entity.health}/${entity.maxHealth}</div>
-                    <div class="stat-item">⭐ Seviye ${entity.level || 1}</div>
-                `;
-
-                if (entity.owner === gameState.playerId) {
-                    if (entity.type === 'barracks') {
-                        actionsEl.innerHTML = `
-                            <button class="action-btn" onclick="trainUnit('infantry')">🔫 Piyade</button>
-                            <button class="action-btn" onclick="trainUnit('heavy')">💪 Ağır</button>
-                            <button class="action-btn" onclick="trainUnit('sniper')">🎯 Nişancı</button>
-                            <button class="action-btn" onclick="trainUnit('scout')">🏃 Keşifçi</button>
-                        `;
-                    } else if (entity.type === 'tower') {
-                        actionsEl.innerHTML = `
-                            <button class="action-btn" onclick="upgradeBuilding('${entity.id}')">⬆️ Geliştir</button>
-                        `;
-                    }
-                }
-            } else if (entity.entityType === 'unit') {
-                const def = UNITS[entity.type];
-                iconEl.textContent = def.icon;
-                nameEl.textContent = def.name;
-                ownerEl.textContent = entity.owner === gameState.playerId ? 'Senin' : (gameState.players[entity.owner]?.name || 'Düşman');
-                healthEl.style.width = `${(entity.health / def.health) * 100}%`;
-
-                statsEl.innerHTML = `
-                    <div class="stat-item">❤️ ${entity.health}/${def.health}</div>
-                    <div class="stat-item">⚔️ ${def.damage}</div>
-                    <div class="stat-item">📏 ${def.range}</div>
-                `;
-
-                if (entity.owner === gameState.playerId) {
-                    actionsEl.innerHTML = `
-                        <button class="action-btn" onclick="attackNearestEnemy('${entity.id}')">⚔️ Saldır</button>
-                        <button class="action-btn" onclick="holdPosition('${entity.id}')">🛡️ Bekle</button>
-                    `;
-                }
-            } else if (entity.entityType === 'resource') {
-                const def = RESOURCE_TYPES[entity.type];
-                iconEl.textContent = def.icon;
-                nameEl.textContent = def.name;
-                ownerEl.textContent = entity.owner ? (entity.owner === gameState.playerId ? 'Senin' : gameState.players[entity.owner]?.name || 'Düşman') : 'Boş';
-                healthEl.style.width = `${(entity.remaining / entity.capacity) * 100}%`;
-
-                statsEl.innerHTML = `
-                    <div class="stat-item">📦 ${entity.remaining}/${entity.capacity}</div>
-                    <div class="stat-item">⭐ Seviye ${entity.level}</div>
-                `;
-
-                if (!entity.owner) {
-                    actionsEl.innerHTML = `
-                        <button class="action-btn" onclick="captureResource('${entity.id}')">🚩 Ele Geçir</button>
-                    `;
-                } else if (entity.owner === gameState.playerId) {
-                    actionsEl.innerHTML = `
-                        <button class="action-btn" onclick="upgradeResource('${entity.id}')">⬆️ Geliştir</button>
-                    `;
-                }
-            }
-        }
-
-        // Place Building
-        async function placeBuilding(x, y) {
-            const type = gameState.selectedBuilding;
-            const def = BUILDINGS[type];
-
-            // Check resources
-            if (!canAfford(def.cost)) {
-                showNotification('Yetersiz Kaynak', 'Bu binayı inşa etmek için yeterli kaynağınız yok', 'warning');
-                return;
-            }
-
-            // Deduct resources
-            spendResources(def.cost);
-
-            // Create building
-            const buildingId = `building_${gameState.playerId}_${Date.now()}`;
-            const building = {
-                id: buildingId,
-                type: type,
-                owner: gameState.playerId,
-                x: x,
-                y: y,
-                health: def.health,
-                maxHealth: def.health,
-                level: 1
-            };
-
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/gameState/buildings/${buildingId}`).set(building);
-                showNotification('İnşa Edildi', `${def.name} inşa edildi!`, 'success');
-            } catch (error) {
-                console.error('Error placing building:', error);
-            }
-
-            // Deselect building type
-            gameState.selectedBuilding = null;
-            document.querySelectorAll('.build-item').forEach(el => el.classList.remove('selected'));
-        }
-
-        // Train Unit
-        async function trainUnit(type) {
-            if (!type) type = gameState.selectedUnit;
-            if (!type) return;
-
-            const def = UNITS[type];
-
-            // Check resources
-            if (!canAfford(def.cost)) {
-                showNotification('Yetersiz Kaynak', 'Bu askeri eğitmek için yeterli kaynağınız yok', 'warning');
-                return;
-            }
-
-            // Find barracks
-            const barracks = Object.values(getGameBuildings()).find(
-                b => b.type === 'barracks' && b.owner === gameState.playerId
-            );
-
-            if (!barracks) {
-                showNotification('Kışla Yok', 'Önce bir kışla inşa etmelisiniz', 'warning');
-                return;
-            }
-
-            // Deduct resources
-            spendResources(def.cost);
-
-            // Create unit
-            const unitId = `unit_${gameState.playerId}_${Date.now()}`;
-            const unit = {
-                id: unitId,
-                type: type,
-                owner: gameState.playerId,
-                x: barracks.x + (Math.random() - 0.5) * 60,
-                y: barracks.y + (Math.random() - 0.5) * 60,
-                health: def.health
-            };
-
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/gameState/units/${unitId}`).set(unit);
-                showNotification('Eğitildi', `${def.name} eğitildi!`, 'success');
-            } catch (error) {
-                console.error('Error training unit:', error);
-            }
-        }
-
-        // Move Unit
-        async function moveUnit(unitId, targetX, targetY) {
-            // Check movement points
-            if (gameState.resources.movement < 1) {
-                showNotification('Hareket Puanı Yok', 'Hareket puanı satın alın', 'warning');
-                return;
-            }
-
-            gameState.resources.movement--;
-            updateResourceDisplay();
-
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/gameState/units/${unitId}`).update({
-                    targetX: targetX,
-                    targetY: targetY
-                });
-            } catch (error) {
-                console.error('Error moving unit:', error);
-            }
-        }
-
-        // Update Unit Position
-        async function updateUnitPosition(unitId, x, y) {
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/gameState/units/${unitId}`).update({
-                    x: x,
-                    y: y
-                });
-            } catch (error) {
-                console.error('Error updating unit position:', error);
-            }
-        }
-
-        // Attack Nearest Enemy
-        async function attackNearestEnemy(unitId) {
-            const unit = getGameUnits()[unitId];
-            if (!unit) return;
-
-            const def = UNITS[unit.type];
-            let nearestEnemy = null;
-            let nearestDist = Infinity;
-
-            // Find nearest enemy unit
-            Object.values(getGameUnits()).forEach(enemy => {
-                if (enemy.owner !== gameState.playerId && !isPactActive(enemy.owner)) {
-                    const dx = enemy.x - unit.x;
-                    const dy = enemy.y - unit.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < nearestDist) {
-                        nearestDist = dist;
-                        nearestEnemy = enemy;
-                    }
-                }
-            });
-
-            if (nearestEnemy && nearestDist <= def.range) {
-                // Check ammo
-                if (gameState.resources.ammo < 1) {
-                    showNotification('Mühimmat Yok', 'Mühimmat satın alın', 'warning');
-                    return;
-                }
-
-                gameState.resources.ammo--;
-                updateResourceDisplay();
-
-                // Deal damage
-                const newHealth = nearestEnemy.health - def.damage;
-                if (newHealth <= 0) {
-                    await database.ref(`rooms/${gameState.roomCode}/gameState/units/${nearestEnemy.id}`).remove();
-                    showNotification('Düşman Yok Edildi!', `${UNITS[nearestEnemy.type].name} yok edildi!`, 'success');
-                } else {
-                    await database.ref(`rooms/${gameState.roomCode}/gameState/units/${nearestEnemy.id}`).update({
-                        health: newHealth
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
+                         map: updatedMap,
+                        [`players.${user.uid}.resources.ammo`]: increment(-unitType.ammoCost)
                     });
-                }
-            } else if (nearestEnemy) {
-                // Move towards enemy
-                moveUnit(unitId, nearestEnemy.x, nearestEnemy.y);
-            } else {
-                showNotification('Düşman Yok', 'Yakında düşman bulunamadı', 'warning');
-            }
+                    setSelectedTile(null); 
+                 } else {
+                     showNotification("Yetersiz Mühimmat!");
+                 }
+                 return;
+             } else {
+                 showNotification("Menzil dışı!");
+             }
         }
+    }
 
-        // Hold Position
-        async function holdPosition(unitId) {
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/gameState/units/${unitId}`).update({
-                    targetX: null,
-                    targetY: null
-                });
-                showNotification('Beklemede', 'Asker pozisyonunu koruyor', 'success');
-            } catch (error) {
-                console.error('Error holding position:', error);
-            }
-        }
+    setSelectedTile(clickedTile);
+  };
 
-        // Capture Resource
-        async function captureResource(nodeId) {
-            const node = getResourceNodes()[nodeId];
-            if (!node || node.owner) return;
+  const buildStructure = async (buildingKey) => {
+    if (!selectedTile || !myPlayer) return;
+    if (selectedTile.owner !== user.uid && selectedTile.structureType !== 'MINE_WILD') {
+        showNotification("Bu toprak senin değil!");
+        return;
+    }
+    if (selectedTile.structureType && selectedTile.structureType !== 'MINE_WILD') {
+        showNotification("Burada zaten bina var.");
+        return;
+    }
+    if (selectedTile.unit) {
+        showNotification("Önce birimi çek.");
+        return;
+    }
 
-            // Check if player has nearby unit
-            const units = Object.values(getGameUnits()).filter(u => u.owner === gameState.playerId);
-            const hasNearbyUnit = units.some(u => {
-                const dx = u.x - node.x;
-                const dy = u.y - node.y;
-                return Math.sqrt(dx * dx + dy * dy) < 100;
-            });
+    const building = BUILDINGS[buildingKey];
+    if (myPlayer.resources.oil < building.cost.oil || 
+        myPlayer.resources.wheat < building.cost.wheat || 
+        myPlayer.resources.dollar < building.cost.dollar) {
+        showNotification("Kaynak yetersiz!");
+        return;
+    }
 
-            if (!hasNearbyUnit) {
-                showNotification('Asker Gerekli', 'Madeni ele geçirmek için yakınında asker olmalı', 'warning');
-                return;
-            }
+    if (selectedTile.structureType === 'MINE_WILD') {
+        showNotification("Madenlerin üzerine bina yapılamaz.");
+        return;
+    }
 
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/gameState/resourceNodes/${nodeId}`).update({
-                    owner: gameState.playerId
-                });
-                showNotification('Ele Geçirildi!', `${RESOURCE_TYPES[node.type].name} artık senin!`, 'success');
-            } catch (error) {
-                console.error('Error capturing resource:', error);
-            }
-        }
+    const updatedMap = JSON.parse(JSON.stringify(gameData.map));
+    updatedMap[selectedTile.y][selectedTile.x].structureType = building.id;
+    updatedMap[selectedTile.y][selectedTile.x].owner = user.uid;
+    updatedMap[selectedTile.y][selectedTile.x].hp = 500;
 
-        // Upgrade Resource
-        async function upgradeResource(nodeId) {
-            const node = getResourceNodes()[nodeId];
-            if (!node || node.owner !== gameState.playerId) return;
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
+        map: updatedMap,
+        [`players.${user.uid}.resources.oil`]: increment(-building.cost.oil),
+        [`players.${user.uid}.resources.wheat`]: increment(-building.cost.wheat),
+        [`players.${user.uid}.resources.dollar`]: increment(-building.cost.dollar),
+    });
+    setSelectedTile(null);
+  };
 
-            const def = RESOURCE_TYPES[node.type];
-            if (!canAfford(def.upgradeCost)) {
-                showNotification('Yetersiz Kaynak', 'Geliştirmek için yeterli kaynağınız yok', 'warning');
-                return;
-            }
+  const trainUnit = async (unitKey) => {
+     if (!selectedTile || !myPlayer) return;
+     if (selectedTile.structureType !== 'BARRACKS' || selectedTile.owner !== user.uid) {
+         showNotification("Sadece Kışlada asker üretilir.");
+         return;
+     }
+     if (selectedTile.unit) {
+         showNotification("Kışla dolu.");
+         return;
+     }
 
-            spendResources(def.upgradeCost);
+     const unit = UNITS[unitKey];
+     if (myPlayer.resources.oil < unit.cost.oil || 
+        myPlayer.resources.wheat < unit.cost.wheat || 
+        myPlayer.resources.dollar < unit.cost.dollar) {
+        showNotification("Kaynak yetersiz!");
+        return;
+    }
 
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/gameState/resourceNodes/${nodeId}`).update({
-                    level: (node.level || 1) + 1
-                });
-                showNotification('Geliştirildi!', `${def.name} seviye ${(node.level || 1) + 1}!`, 'success');
-            } catch (error) {
-                console.error('Error upgrading resource:', error);
-            }
-        }
+    const updatedMap = JSON.parse(JSON.stringify(gameData.map));
+    updatedMap[selectedTile.y][selectedTile.x].unit = {
+        type: unitKey,
+        hp: unit.hp,
+        maxHp: unit.hp,
+        owner: user.uid
+    };
 
-        // Upgrade Building
-        async function upgradeBuilding(buildingId) {
-            const building = getGameBuildings()[buildingId];
-            if (!building || building.owner !== gameState.playerId) return;
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
+        map: updatedMap,
+        [`players.${user.uid}.resources.oil`]: increment(-unit.cost.oil),
+        [`players.${user.uid}.resources.wheat`]: increment(-unit.cost.wheat),
+        [`players.${user.uid}.resources.dollar`]: increment(-unit.cost.dollar),
+    });
+    setSelectedTile(null);
+  };
 
-            const cost = { oil: 100, wheat: 100, dollar: 50 };
-            if (!canAfford(cost)) {
-                showNotification('Yetersiz Kaynak', 'Geliştirmek için yeterli kaynağınız yok', 'warning');
-                return;
-            }
+  const offerPact = async (targetPlayerId) => {
+      if (myPlayer.resources.dollar < 500) { showNotification("Diplomasi için 500$ lazım."); return; }
+      const duration = 5 * 60 * 1000; // 5 min
+      const expiry = Date.now() + duration;
 
-            spendResources(cost);
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
+          [`players.${user.uid}.diplomacy.${targetPlayerId}`]: expiry,
+          [`players.${targetPlayerId}.diplomacy.${user.uid}`]: expiry,
+          [`players.${user.uid}.resources.dollar`]: increment(-500)
+      });
+      showNotification("Pakt imzalandı (5 dk)");
+  };
 
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/gameState/buildings/${buildingId}`).update({
-                    level: (building.level || 1) + 1,
-                    maxHealth: building.maxHealth + 100,
-                    health: building.health + 100
-                });
-                showNotification('Geliştirildi!', `${BUILDINGS[building.type].name} seviye ${(building.level || 1) + 1}!`, 'success');
-            } catch (error) {
-                console.error('Error upgrading building:', error);
-            }
-        }
+  const postMarketOffer = async (resource, amount, price) => {
+      if (!resource || !amount || !price) return;
+      if (myPlayer.resources[resource.toLowerCase()] < amount) { showNotification("Yetersiz kaynak."); return; }
 
-        // Resource Production
-        function produceResources() {
-            if (!gameState.inGame) return;
+      const offer = {
+          id: Date.now().toString(),
+          seller: user.uid,
+          sellerName: myPlayer.name,
+          resource,
+          amount: parseInt(amount),
+          price: parseInt(price)
+      };
 
-            const nodes = getResourceNodes();
-            Object.values(nodes).forEach(node => {
-                if (node.owner === gameState.playerId && node.remaining > 0) {
-                    const production = node.level * 5;
-                    const actual = Math.min(production, node.remaining);
-                    gameState.resources[node.type] += actual;
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
+          market: arrayUnion(offer),
+          [`players.${user.uid}.resources.${resource.toLowerCase()}`]: increment(-amount)
+      });
+      showNotification("İlan eklendi.");
+  };
 
-                    // Update remaining in Firebase
-                    database.ref(`rooms/${gameState.roomCode}/gameState/resourceNodes/${node.id}`).update({
-                        remaining: node.remaining - actual
-                    });
-                }
-            });
+  const buyMarketOffer = async (offer) => {
+      if (myPlayer.resources.dollar < offer.price) { showNotification("Paran yetmiyor."); return; }
+      
+      const newMarket = gameData.market.filter(o => o.id !== offer.id);
+      if (newMarket.length === gameData.market.length) { showNotification("İlan artık yok."); return; }
 
-            updateResourceDisplay();
-            syncPlayerResources();
-        }
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', `game_${gameCode}`), {
+          market: newMarket,
+          [`players.${user.uid}.resources.dollar`]: increment(-offer.price),
+          [`players.${user.uid}.resources.${offer.resource.toLowerCase()}`]: increment(offer.amount),
+          [`players.${offer.seller}.resources.dollar`]: increment(offer.price)
+      });
+      showNotification("Satın alındı!");
+  };
 
-        // Sync Player Resources
-        async function syncPlayerResources() {
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/players/${gameState.playerId}/resources`).set(gameState.resources);
-            } catch (error) {
-                console.error('Error syncing resources:', error);
-            }
-        }
+  // --- RENDERING ---
 
-        // Can Afford
-        function canAfford(cost) {
-            return Object.entries(cost).every(([resource, amount]) => gameState.resources[resource] >= amount);
-        }
+  if (!user) return <div className="flex items-center justify-center h-screen bg-gray-900 text-white">Yükleniyor...</div>;
 
-        // Spend Resources
-        function spendResources(cost) {
-            Object.entries(cost).forEach(([resource, amount]) => {
-                gameState.resources[resource] -= amount;
-            });
-            updateResourceDisplay();
-            syncPlayerResources();
-        }
+  return (
+    <div className="flex flex-col h-screen bg-gray-900 text-gray-100 overflow-hidden font-sans">
+      {/* Notification Toast */}
+      {notification && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-6 py-2 rounded-lg shadow-xl z-50 font-bold animate-bounce pointer-events-none">
+          {notification}
+        </div>
+      )}
 
-        // Update Resource Display
-        function updateResourceDisplay() {
-            document.getElementById('oil-count').textContent = Math.floor(gameState.resources.oil);
-            document.getElementById('wheat-count').textContent = Math.floor(gameState.resources.wheat);
-            document.getElementById('dollar-count').textContent = Math.floor(gameState.resources.dollar);
-            document.getElementById('ammo-count').textContent = Math.floor(gameState.resources.ammo);
-            document.getElementById('movement-count').textContent = Math.floor(gameState.resources.movement);
-        }
+      {/* --- MENU SCREEN --- */}
+      {gameState === 'menu' && (
+        <div className="flex flex-col items-center justify-center h-full space-y-8 bg-[url('https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80')] bg-cover bg-blend-multiply bg-gray-800">
+          <h1 className="text-6xl font-black text-yellow-500 tracking-tighter uppercase drop-shadow-lg">Taktik Komuta</h1>
+          <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 w-96 opacity-95">
+            <h2 className="text-xl mb-4 font-bold text-center">Ülkeni Seç</h2>
+            <div className="grid grid-cols-5 gap-2 mb-6">
+              {COUNTRIES.map(c => (
+                <button 
+                    key={c.code}
+                    onClick={() => setSelectedCountry(c)}
+                    className={`p-2 rounded text-2xl transition hover:scale-110 ${selectedCountry.code === c.code ? 'ring-2 ring-yellow-400 bg-gray-700' : ''}`}
+                    title={c.name}
+                >
+                  {c.flag}
+                </button>
+              ))}
+            </div>
+            <div className="text-center mb-6 text-yellow-400 font-bold">{selectedCountry.name} Ordusu Hazır!</div>
+            
+            <div className="flex flex-col gap-4">
+              <button onClick={createGame} disabled={loading} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2">
+                {loading ? '...' : 'Yeni Operasyon Başlat'} <Zap size={20} />
+              </button>
+              <div className="flex gap-2">
+                <input 
+                    type="text" 
+                    placeholder="Erişim Kodu" 
+                    className="bg-gray-700 text-white px-4 rounded-lg w-full uppercase tracking-widest text-center"
+                    onChange={(e) => setGameCode(e.target.value)}
+                    maxLength={6}
+                />
+                <button onClick={() => joinGame(gameCode)} disabled={loading} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg">
+                  Katıl
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-        // Buy Ammo
-        function buyAmmo() {
-            const cost = { wheat: 10, oil: 10 };
-            if (!canAfford(cost)) {
-                showNotification('Yetersiz Kaynak', 'Mühimmat almak için yeterli kaynağınız yok', 'warning');
-                return;
-            }
-            spendResources(cost);
-            gameState.resources.ammo += 10;
-            updateResourceDisplay();
-            showNotification('Satın Alındı', '+10 Mühimmat', 'success');
-        }
-
-        // Buy Movement
-        function buyMovement() {
-            const cost = { oil: 10, dollar: 10 };
-            if (!canAfford(cost)) {
-                showNotification('Yetersiz Kaynak', 'Hareket puanı almak için yeterli kaynağınız yok', 'warning');
-                return;
-            }
-            spendResources(cost);
-            gameState.resources.movement += 10;
-            updateResourceDisplay();
-            showNotification('Satın Alındı', '+10 Hareket Puanı', 'success');
-        }
-
-        // Is Pact Active
-        function isPactActive(playerId) {
-            const pactKey1 = `${gameState.playerId}_${playerId}`;
-            const pactKey2 = `${playerId}_${gameState.playerId}`;
-            const pact = gameState.pacts[pactKey1] || gameState.pacts[pactKey2];
-            return pact && pact.active && pact.expiresAt > Date.now();
-        }
-
-        // Update Pacts
-        function updatePacts() {
-            const pactsList = document.getElementById('pacts-list');
-            const incomingPacts = document.getElementById('incoming-pacts');
-
-            pactsList.innerHTML = '';
-            incomingPacts.innerHTML = '';
-
-            Object.entries(gameState.pacts).forEach(([key, pact]) => {
-                if (pact.active && pact.expiresAt > Date.now()) {
-                    const otherId = pact.from === gameState.playerId ? pact.to : pact.from;
-                    const other = gameState.players[otherId];
-                    const remaining = Math.ceil((pact.expiresAt - Date.now()) / 1000);
-                    const minutes = Math.floor(remaining / 60);
-                    const seconds = remaining % 60;
-
-                    if (pact.from === gameState.playerId || pact.to === gameState.playerId) {
-                        const div = document.createElement('div');
-                        div.className = 'pact-item';
-                        div.innerHTML = `
-                            <div class="pact-header">
-                                <span class="pact-player">${other?.country?.flag || '🏳️'} ${other?.name || 'Bilinmeyen'}</span>
-                                <span class="pact-time">${minutes}:${seconds.toString().padStart(2, '0')}</span>
-                            </div>
-                        `;
-                        pactsList.appendChild(div);
-                    }
-                } else if (!pact.active && pact.to === gameState.playerId) {
-                    // Incoming request
-                    const from = gameState.players[pact.from];
-                    const div = document.createElement('div');
-                    div.className = 'pact-item';
-                    div.innerHTML = `
-                        <div class="pact-header">
-                            <span class="pact-player">${from?.country?.flag || '🏳️'} ${from?.name || 'Bilinmeyen'}</span>
-                            <span class="pact-time">${Math.floor(pact.duration / 60)} dk</span>
+      {/* --- LOBBY SCREEN --- */}
+      {gameState === 'lobby' && gameData && (
+        <div className="flex flex-col items-center justify-center h-full bg-gray-800">
+          <div className="bg-gray-700 p-8 rounded-2xl w-[600px] shadow-2xl">
+            <h2 className="text-3xl font-bold text-center mb-2">Operasyon Odası</h2>
+            <p className="text-center text-4xl font-mono text-yellow-400 tracking-[0.5em] mb-8 bg-black/30 py-4 rounded-lg select-all cursor-pointer" onClick={() => {navigator.clipboard.writeText(gameData.code); showNotification("Kod Kopyalandı!");}}>
+                {gameData.code}
+            </p>
+            
+            <div className="space-y-2 mb-8">
+                {Object.values(gameData.players).map(p => (
+                    <div key={p.id} className="flex items-center justify-between bg-gray-600 p-3 rounded">
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">{p.country.flag}</span>
+                            <span className="font-bold">{p.name} {p.id === gameData.host ? '(Yönetici)' : ''}</span>
                         </div>
-                        <div class="pact-actions">
-                            <button class="pact-btn accept" onclick="acceptPact('${key}')">Kabul</button>
-                            <button class="pact-btn reject" onclick="rejectPact('${key}')">Reddet</button>
-                        </div>
-                    `;
-                    incomingPacts.appendChild(div);
-                }
-            });
-
-            if (pactsList.innerHTML === '') {
-                pactsList.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem;">Aktif pakt yok</p>';
-            }
-            if (incomingPacts.innerHTML === '') {
-                incomingPacts.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.85rem;">Gelen teklif yok</p>';
-            }
-        }
-
-        // Send Pact
-        async function sendPact() {
-            const playerId = document.getElementById('pact-player').value;
-            const duration = parseInt(document.querySelector('.time-option.selected').dataset.time);
-
-            if (!playerId) {
-                showNotification('Hata', 'Bir oyuncu seçin', 'warning');
-                return;
-            }
-
-            const pactKey = `${gameState.playerId}_${playerId}`;
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/pacts/${pactKey}`).set({
-                    from: gameState.playerId,
-                    to: playerId,
-                    duration: duration,
-                    active: false,
-                    createdAt: Date.now()
-                });
-                showNotification('Gönderildi', 'Pakt teklifi gönderildi', 'success');
-                closeDiplomacyModal();
-            } catch (error) {
-                console.error('Error sending pact:', error);
-            }
-        }
-
-        // Accept Pact
-        async function acceptPact(pactKey) {
-            const pact = gameState.pacts[pactKey];
-            if (!pact) return;
-
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/pacts/${pactKey}`).update({
-                    active: true,
-                    expiresAt: Date.now() + pact.duration * 1000
-                });
-                showNotification('Kabul Edildi', 'Saldırmazlık paktı aktif!', 'success');
-            } catch (error) {
-                console.error('Error accepting pact:', error);
-            }
-        }
-
-        // Reject Pact
-        async function rejectPact(pactKey) {
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/pacts/${pactKey}`).remove();
-                showNotification('Reddedildi', 'Pakt teklifi reddedildi', 'warning');
-            } catch (error) {
-                console.error('Error rejecting pact:', error);
-            }
-        }
-
-        // Market Functions
-        function updateMarketListings() {
-            const listings = document.getElementById('market-listings');
-            listings.innerHTML = '';
-
-            const resourceIcons = { oil: '🛢️', wheat: '🌾', dollar: '💵' };
-
-            (gameState.marketListings || []).forEach((listing, index) => {
-                if (listing.sellerId === gameState.playerId) return;
-                const seller = gameState.players[listing.sellerId];
-
-                const div = document.createElement('div');
-                div.className = 'listing-item';
-                div.innerHTML = `
-                    <span class="listing-resource">${resourceIcons[listing.resource]}</span>
-                    <div class="listing-info">
-                        <div class="listing-amount">${listing.amount} ${listing.resource}</div>
-                        <div class="listing-price">${listing.price} 💵</div>
-                        <div class="listing-seller">${seller?.name || 'Bilinmeyen'}</div>
+                        <span className="text-green-400">● Çevrimiçi</span>
                     </div>
-                    <button class="listing-buy" onclick="buyListing(${index})">Satın Al</button>
-                `;
-                listings.appendChild(div);
-            });
+                ))}
+            </div>
 
-            if (listings.innerHTML === '') {
-                listings.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">Market boş</p>';
-            }
+            {gameData.host === user.uid ? (
+                 <button onClick={startGame} className="w-full bg-green-600 hover:bg-green-500 py-4 rounded-lg font-bold text-xl">
+                     OPERASYONU BAŞLAT
+                 </button>
+            ) : (
+                <div className="text-center text-gray-400 animate-pulse">Yönetici bekleniyor...</div>
+            )}
+          </div>
+        </div>
+      )}
 
-            // Update send player dropdown
-            const sendPlayer = document.getElementById('send-player');
-            sendPlayer.innerHTML = '';
-            Object.values(gameState.players).forEach(player => {
-                if (player.id !== gameState.playerId) {
-                    const option = document.createElement('option');
-                    option.value = player.id;
-                    option.textContent = `${player.country?.flag || '🏳️'} ${player.name}`;
-                    sendPlayer.appendChild(option);
-                }
-            });
+      {/* --- GAME SCREEN --- */}
+      {gameState === 'game' && gameData && myPlayer && (
+        <div className="flex flex-1 overflow-hidden">
+          
+          {/* LEFT SIDEBAR - INFO & ACTIONS */}
+          <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col z-20 shadow-xl">
+             {/* Player Header */}
+             <div className="p-4 bg-gray-900 border-b border-gray-700">
+                 <div className="flex items-center gap-3 mb-2">
+                     <span className="text-4xl">{myPlayer.country.flag}</span>
+                     <div>
+                         <h3 className="font-bold text-lg leading-none">{myPlayer.name}</h3>
+                         <span className="text-xs text-gray-400">ID: {user.uid.slice(0,6)}</span>
+                     </div>
+                 </div>
+                 
+                 {/* Resources Grid */}
+                 <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
+                     {Object.entries(RESOURCES).map(([key, res]) => (
+                         <div key={key} className={`flex items-center gap-1 ${res.color} bg-gray-800 p-1 rounded border border-gray-700`}>
+                             <span>{res.icon}</span>
+                             <span className="font-mono font-bold">{myPlayer.resources[res.id]}</span>
+                         </div>
+                     ))}
+                 </div>
+                 <div className="flex gap-2 mt-2">
+                    <button onClick={() => buyResource('AMMO')} className="flex-1 bg-blue-900/50 hover:bg-blue-800 text-xs py-1 px-2 rounded border border-blue-700 flex items-center justify-center gap-1">
+                        +50 {RESOURCES.AMMO.icon} (50{RESOURCES.OIL.icon} 50{RESOURCES.WHEAT.icon})
+                    </button>
+                    <button onClick={() => buyResource('MOVE')} className="flex-1 bg-orange-900/50 hover:bg-orange-800 text-xs py-1 px-2 rounded border border-orange-700 flex items-center justify-center gap-1">
+                        +50 {RESOURCES.MOVE.icon} (50{RESOURCES.OIL.icon} 50{RESOURCES.DOLLAR.icon})
+                    </button>
+                 </div>
+             </div>
 
-            // Update diplomacy player dropdown
-            const pactPlayer = document.getElementById('pact-player');
-            pactPlayer.innerHTML = '<option value="">Seçin...</option>';
-            Object.values(gameState.players).forEach(player => {
-                if (player.id !== gameState.playerId) {
-                    const option = document.createElement('option');
-                    option.value = player.id;
-                    option.textContent = `${player.country?.flag || '🏳️'} ${player.name}`;
-                    pactPlayer.appendChild(option);
-                }
-            });
-        }
+             {/* Selection Info */}
+             <div className="flex-1 p-4 overflow-y-auto">
+                 {selectedTile ? (
+                     <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+                         <h4 className="text-yellow-400 font-bold uppercase text-xs tracking-wider mb-2">Seçili Bölge ({selectedTile.x}, {selectedTile.y})</h4>
+                         
+                         {/* Tile Info */}
+                         <div className="bg-gray-700 p-3 rounded-lg mb-4 text-sm">
+                            {selectedTile.owner ? (
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span>{gameData.players[selectedTile.owner]?.country.flag}</span>
+                                    <span className={selectedTile.owner === user.uid ? 'text-green-400' : 'text-red-400'}>
+                                        {gameData.players[selectedTile.owner]?.name}
+                                    </span>
+                                </div>
+                            ) : <div className="text-gray-400 mb-2">Sahipsiz Toprak</div>}
+                            
+                            {selectedTile.structureType && (
+                                <div className="flex justify-between items-center border-t border-gray-600 pt-2">
+                                    <span className="font-bold">
+                                        {(selectedTile.structureType === 'MINE' || selectedTile.structureType === 'MINE_WILD') ? 
+                                        `MADEN (${selectedTile.resourceType})` : 
+                                        BUILDINGS[selectedTile.structureType]?.name}
+                                    </span>
+                                    <span className="text-xs text-gray-400">HP: {selectedTile.hp || 100}</span>
+                                </div>
+                            )}
+                            
+                            {selectedTile.unit && (
+                                <div className="flex justify-between items-center border-t border-gray-600 pt-2 mt-2">
+                                    <span className="font-bold flex items-center gap-1">{UNITS[selectedTile.unit.type].icon} {UNITS[selectedTile.unit.type].name}</span>
+                                    <div className="flex flex-col items-end text-xs">
+                                        <span className="text-green-400">HP: {selectedTile.unit.hp}</span>
+                                        <span className="text-red-400">DMG: {UNITS[selectedTile.unit.type].damage}</span>
+                                    </div>
+                                </div>
+                            )}
+                         </div>
 
-        // Create Listing
-        async function createListing() {
-            const resource = document.getElementById('sell-resource').value;
-            const amount = parseInt(document.getElementById('sell-amount').value);
-            const price = parseInt(document.getElementById('sell-price').value);
+                         {/* Actions if Owned */}
+                         {selectedTile.owner === user.uid && !selectedTile.unit && !selectedTile.structureType?.includes('MINE') && (
+                             <div className="space-y-2">
+                                 {!selectedTile.structureType && (
+                                     <>
+                                        <div className="text-xs text-gray-400 mb-1">Bina İnşa Et</div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {Object.entries(BUILDINGS).filter(([k]) => k !== 'HQ').map(([key, b]) => (
+                                                <button key={key} onClick={() => buildStructure(key)} className="bg-gray-700 hover:bg-gray-600 p-2 rounded text-left text-xs border border-gray-600 transition">
+                                                    <div className="font-bold">{b.icon} {b.name}</div>
+                                                    <div className="text-[10px] text-gray-400 mt-1">
+                                                        {b.cost.oil > 0 && `${b.cost.oil}🛢️ `} 
+                                                        {b.cost.wheat > 0 && `${b.cost.wheat}🌾 `}
+                                                        {b.cost.dollar > 0 && `${b.cost.dollar}💵`}
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                     </>
+                                 )}
 
-            if (!amount || amount <= 0 || !price || price <= 0) {
-                showNotification('Hata', 'Geçerli değerler girin', 'warning');
-                return;
-            }
+                                 {selectedTile.structureType === 'BARRACKS' && (
+                                     <>
+                                        <div className="text-xs text-gray-400 mb-1 mt-4">Asker Eğit</div>
+                                        <div className="space-y-2">
+                                            {Object.entries(UNITS).map(([key, u]) => (
+                                                <button key={key} onClick={() => trainUnit(key)} className="w-full bg-gray-700 hover:bg-gray-600 p-2 rounded flex justify-between items-center border border-gray-600 transition group">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xl group-hover:scale-125 transition">{u.icon}</span>
+                                                        <div className="flex flex-col items-start">
+                                                            <span className="text-sm font-bold">{u.name}</span>
+                                                            <span className="text-[10px] text-gray-400">Menzil: {u.range}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-[10px] text-right text-gray-400">
+                                                        <div>{u.cost.oil}🛢️ {u.cost.wheat}🌾</div>
+                                                        <div>{u.cost.dollar}💵</div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                     </>
+                                 )}
+                             </div>
+                         )}
 
-            if (gameState.resources[resource] < amount) {
-                showNotification('Yetersiz Kaynak', 'Satmak için yeterli kaynağınız yok', 'warning');
-                return;
-            }
+                         {/* Actions if Enemy */}
+                         {selectedTile.owner && selectedTile.owner !== user.uid && (
+                             <div className="mt-4">
+                                 <button onClick={() => offerPact(selectedTile.owner)} className="w-full bg-blue-900 hover:bg-blue-800 text-blue-100 py-2 rounded flex items-center justify-center gap-2 text-sm border border-blue-700">
+                                     <Handshake size={16} /> Saldırmazlık Paktı (500$)
+                                 </button>
+                             </div>
+                         )}
+                     </div>
+                 ) : (
+                     <div className="text-gray-500 text-center text-sm italic mt-10">
+                        Haritadan bir kare seçin...
+                     </div>
+                 )}
+             </div>
 
-            gameState.resources[resource] -= amount;
-            updateResourceDisplay();
-            syncPlayerResources();
+             {/* Market Mini View */}
+             <div className="p-2 border-t border-gray-700 bg-gray-900 h-48 overflow-y-auto">
+                 <h4 className="text-xs font-bold text-gray-400 mb-2 flex items-center gap-1"><ShoppingCart size={12}/> KARABORSA</h4>
+                 
+                 {/* Post Offer UI */}
+                 <div className="flex gap-1 mb-2">
+                     <select id="mRes" className="bg-gray-700 text-xs rounded w-16">
+                         <option value="OIL">Petrol</option>
+                         <option value="WHEAT">Buğday</option>
+                     </select>
+                     <input id="mAmt" type="number" placeholder="Adet" className="bg-gray-700 text-xs w-12 rounded pl-1" defaultValue={100}/>
+                     <input id="mPrc" type="number" placeholder="Fiyat" className="bg-gray-700 text-xs w-12 rounded pl-1" defaultValue={200}/>
+                     <button 
+                        onClick={() => postMarketOffer(document.getElementById('mRes').value, document.getElementById('mAmt').value, document.getElementById('mPrc').value)}
+                        className="bg-green-700 hover:bg-green-600 text-xs px-2 rounded"
+                     >+</button>
+                 </div>
 
-            const listings = gameState.marketListings || [];
-            listings.push({
-                sellerId: gameState.playerId,
-                resource: resource,
-                amount: amount,
-                price: price,
-                createdAt: Date.now()
-            });
+                 <div className="space-y-1">
+                     {marketOffers.map(offer => (
+                         <div key={offer.id} className="flex justify-between items-center bg-gray-800 p-1 rounded text-xs border border-gray-700">
+                             <div className="flex items-center gap-1">
+                                 <span>{offer.resource === 'OIL' ? '🛢️' : '🌾'}</span>
+                                 <span className="font-bold">{offer.amount}</span>
+                             </div>
+                             <div className="flex items-center gap-2">
+                                 <span className="text-green-400">{offer.price}$</span>
+                                 {offer.seller !== user.uid && (
+                                     <button onClick={() => buyMarketOffer(offer)} className="bg-green-800 px-1 rounded hover:bg-green-700">Al</button>
+                                 )}
+                             </div>
+                         </div>
+                     ))}
+                 </div>
+             </div>
+          </div>
 
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/market`).set(listings);
-                showNotification('İlan Verildi', 'Kaynağınız markete eklendi', 'success');
-            } catch (error) {
-                console.error('Error creating listing:', error);
-            }
-        }
+          {/* MAIN MAP AREA */}
+          <div className="flex-1 overflow-auto bg-black relative cursor-move" style={{
+              backgroundImage: 'radial-gradient(#333 1px, transparent 1px)',
+              backgroundSize: '20px 20px'
+          }}>
+              {/* Map Grid */}
+              <div className="p-10 min-w-max min-h-max">
+                  <div 
+                    className="grid gap-px bg-gray-800 border-4 border-gray-700 shadow-2xl"
+                    style={{ gridTemplateColumns: `repeat(${MAP_SIZE}, 60px)` }}
+                  >
+                      {gameData.map.map((row, y) => (
+                          row.map((tile, x) => {
+                              // Render Logic
+                              const isSelected = selectedTile?.x === x && selectedTile?.y === y;
+                              const ownerData = tile.owner ? gameData.players[tile.owner] : null;
+                              
+                              let bgClass = "bg-[#2d3748]"; // Base ground
+                              if (tile.resourceType === 'oil') bgClass = "bg-gray-800";
+                              if (tile.resourceType === 'wheat') bgClass = "bg-yellow-900/30";
+                              if (tile.resourceType === 'dollar') bgClass = "bg-green-900/30";
+                              
+                              return (
+                                  <div 
+                                    key={`${x}-${y}`}
+                                    onClick={() => handleTileClick(x, y)}
+                                    className={`
+                                        w-[60px] h-[60px] relative flex items-center justify-center select-none transition-all duration-100
+                                        ${bgClass}
+                                        ${isSelected ? 'ring-4 ring-yellow-400 z-10 scale-105' : 'hover:bg-opacity-80 hover:ring-2 hover:ring-gray-500'}
+                                    `}
+                                  >
+                                      {/* Ownership Indicator */}
+                                      {tile.owner && (
+                                          <div className={`absolute inset-0 opacity-20 ${ownerData?.country.color || 'bg-white'}`} />
+                                      )}
+                                      
+                                      {/* Resource / Structure Icon */}
+                                      {tile.structureType === 'MINE_WILD' && (
+                                          <div className="absolute text-xl opacity-70 animate-pulse">
+                                              {tile.resourceType === 'oil' ? '🛢️' : tile.resourceType === 'wheat' ? '🌾' : '💵'}
+                                          </div>
+                                      )}
+                                      
+                                      {/* Building */}
+                                      {tile.structureType && tile.structureType !== 'MINE_WILD' && (
+                                          <div className="absolute z-10 text-2xl drop-shadow-md">
+                                              {tile.structureType === 'MINE' ? 
+                                                (tile.resourceType === 'oil' ? '🛢️' : tile.resourceType === 'wheat' ? '🌾' : '💵') : 
+                                                BUILDINGS[tile.structureType]?.icon
+                                              }
+                                              {/* Level Indicator Dot */}
+                                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-black"></div>
+                                          </div>
+                                      )}
 
-        // Buy Listing
-        async function buyListing(index) {
-            const listing = gameState.marketListings[index];
-            if (!listing) return;
+                                      {/* Unit */}
+                                      {tile.unit && (
+                                          <div className="absolute z-20 text-3xl transform hover:-translate-y-1 transition drop-shadow-xl">
+                                              {UNITS[tile.unit.type].icon}
+                                              {/* HP Bar */}
+                                              <div className="absolute -bottom-1 left-0 w-full h-1 bg-gray-700 rounded-full overflow-hidden">
+                                                  <div className="h-full bg-green-500" style={{width: `${(tile.unit.hp / tile.unit.maxHp) * 100}%`}}></div>
+                                              </div>
+                                          </div>
+                                      )}
 
-            if (gameState.resources.dollar < listing.price) {
-                showNotification('Yetersiz Dolar', 'Satın almak için yeterli dolarınız yok', 'warning');
-                return;
-            }
-
-            gameState.resources.dollar -= listing.price;
-            gameState.resources[listing.resource] += listing.amount;
-            updateResourceDisplay();
-            syncPlayerResources();
-
-            // Transfer money to seller
-            const sellerResources = gameState.players[listing.sellerId]?.resources;
-            if (sellerResources) {
-                await database.ref(`rooms/${gameState.roomCode}/players/${listing.sellerId}/resources/dollar`).set(
-                    sellerResources.dollar + listing.price
-                );
-            }
-
-            // Remove listing
-            const listings = gameState.marketListings.filter((_, i) => i !== index);
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/market`).set(listings);
-                showNotification('Satın Alındı!', `${listing.amount} ${listing.resource} satın alındı`, 'success');
-            } catch (error) {
-                console.error('Error buying listing:', error);
-            }
-        }
-
-        // Send Resource
-        async function sendResource() {
-            const playerId = document.getElementById('send-player').value;
-            const resource = document.getElementById('send-resource').value;
-            const amount = parseInt(document.getElementById('send-amount').value);
-
-            if (!playerId || !amount || amount <= 0) {
-                showNotification('Hata', 'Geçerli değerler girin', 'warning');
-                return;
-            }
-
-            if (gameState.resources[resource] < amount) {
-                showNotification('Yetersiz Kaynak', 'Göndermek için yeterli kaynağınız yok', 'warning');
-                return;
-            }
-
-            gameState.resources[resource] -= amount;
-            updateResourceDisplay();
-            syncPlayerResources();
-
-            // Add to receiver
-            const receiverResources = gameState.players[playerId]?.resources;
-            if (receiverResources) {
-                try {
-                    await database.ref(`rooms/${gameState.roomCode}/players/${playerId}/resources/${resource}`).set(
-                        receiverResources[resource] + amount
-                    );
-                    showNotification('Gönderildi!', `${amount} ${resource} gönderildi`, 'success');
-                    closeMarketModal();
-                } catch (error) {
-                    console.error('Error sending resource:', error);
-                }
-            }
-        }
-
-        // Show/Hide Modals
-        function openMarketModal() {
-            elements.marketModal.classList.add('active');
-            updateMarketListings();
-        }
-
-        function closeMarketModal() {
-            elements.marketModal.classList.remove('active');
-        }
-
-        function openDiplomacyModal() {
-            elements.diplomacyModal.classList.add('active');
-            updateMarketListings();
-        }
-
-        function closeDiplomacyModal() {
-            elements.diplomacyModal.classList.remove('active');
-        }
-
-        // Show Loading
-        function showLoading(show) {
-            elements.loadingOverlay.classList.toggle('hidden', !show);
-        }
-
-        // Show Lobby
-        function showLobby() {
-            elements.mainMenu.classList.add('hidden');
-            elements.lobby.classList.add('active');
-            elements.displayRoomCode.textContent = gameState.roomCode;
-        }
-
-        // Leave Lobby
-        async function leaveLobby() {
-            try {
-                await database.ref(`rooms/${gameState.roomCode}/players/${gameState.playerId}`).remove();
-
-                // Remove room listeners
-                database.ref(`rooms/${gameState.roomCode}`).off();
-
-                // If host, maybe transfer or delete room
-                if (gameState.isHost) {
-                    const snapshot = await database.ref(`rooms/${gameState.roomCode}/players`).once('value');
-                    const players = snapshot.val();
-                    if (!players || Object.keys(players).length === 0) {
-                        await database.ref(`rooms/${gameState.roomCode}`).remove();
-                    }
-                }
-            } catch (error) {
-                console.error('Error leaving lobby:', error);
-            }
-
-            // Reset state
-            gameState.roomCode = null;
-            gameState.playerId = null;
-            gameState.isHost = false;
-            gameState.players = {};
-
-            elements.lobby.classList.remove('active');
-            elements.mainMenu.classList.remove('hidden');
-        }
-
-        // Show Notification
-        function showNotification(title, text, type = 'success') {
-            const icons = {
-                success: '✓',
-                warning: '⚠️',
-                danger: '✗'
-            };
-
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = `
-                <span class="notification-icon">${icons[type]}</span>
-                <div class="notification-content">
-                    <div class="notification-title">${title}</div>
-                    <div class="notification-text">${text}</div>
-                </div>
-            `;
-            elements.notifications.appendChild(notification);
-
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-
-        // Market Tab Switching
-        document.querySelectorAll('.market-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.market-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                const tabName = tab.dataset.tab;
-                document.getElementById('market-listings').style.display = tabName === 'buy' ? 'block' : 'none';
-                document.getElementById('create-listing-section').style.display = tabName === 'sell' ? 'block' : 'none';
-                document.getElementById('send-section').style.display = tabName === 'send' ? 'block' : 'none';
-            });
-        });
-
-        // Time Option Selection
-        document.querySelectorAll('.time-option').forEach(option => {
-            option.addEventListener('click', () => {
-                document.querySelectorAll('.time-option').forEach(o => o.classList.remove('selected'));
-                option.classList.add('selected');
-            });
-        });
-
-        // Event Listeners
-        elements.createRoomBtn.addEventListener('click', createRoom);
-        elements.joinRoomBtn.addEventListener('click', joinRoom);
-        elements.lobbyChatSend.addEventListener('click', sendChatMessage);
-        elements.lobbyChatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendChatMessage();
-        });
-        elements.readyBtn.addEventListener('click', toggleReady);
-        elements.startGameBtn.addEventListener('click', initiateGameStart);
-        elements.leaveLobbyBtn.addEventListener('click', leaveLobby);
-        document.getElementById('market-btn').addEventListener('click', openMarketModal);
-        document.getElementById('diplomacy-btn').addEventListener('click', openDiplomacyModal);
-        document.getElementById('close-market').addEventListener('click', closeMarketModal);
-        document.getElementById('close-diplomacy').addEventListener('click', closeDiplomacyModal);
-        document.getElementById('create-listing-btn').addEventListener('click', createListing);
-        document.getElementById('send-resource-btn').addEventListener('click', sendResource);
-        document.getElementById('send-pact-btn').addEventListener('click', sendPact);
-        document.getElementById('buy-ammo-btn').addEventListener('click', buyAmmo);
-        document.getElementById('buy-movement-btn').addEventListener('click', buyMovement);
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            initCountryGrid();
-            initBuildGrid();
-            initUnitGrid();
-            showLoading(false);
-        });
-    </script>
-</body>
-</html>
+                                      {/* Flag Overlay for Owner */}
+                                      {ownerData && !tile.unit && (
+                                          <div className="absolute bottom-1 right-1 text-[10px] opacity-60">
+                                              {ownerData.country.flag}
+                                          </div>
+                                      )}
+                                  </div>
+                              );
+                          })
+                      ))}
+                  </div>
+              </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
